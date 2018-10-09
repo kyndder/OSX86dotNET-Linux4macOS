@@ -9,6 +9,8 @@
 #Part of the script was inspired for m13253's Clover-Linux-Installer (https://github.com/m13253/clover-linux-installer)
 #
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
 VERBOSE=""
 OPTA=""
 OPTC=""
@@ -539,7 +541,7 @@ else
 	UNMPART
 fi
 eval ${EX1T}
-UNMPART
+cloudconfig
 } 
 
 UNMPART()	#Unmounting partition
@@ -555,7 +557,6 @@ if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] ; then
 else
 	echo echo "Clover Boot Loader was successfully installed! Exiting."
 fi
-cloudconfig
 } 
 
 cloudconfig()	#Open Clover Cloud Configurator
@@ -572,6 +573,26 @@ else
 	echo echo "Clover Boot Loader was successfully installed! Exiting."
 fi
 eval ${EX1T}
+UNMPART
+}
+
+addkexts()
+{
+echo
+echo "Do you want to add a basic set of kexts?
+This option will add Lilu.kext, VirtualSMC.kext and LiluFriend.kext.
+
+Please write YES or NO."
+read KEXTANS
+if [[ $KEXTANS = YES ]] || [[ $KEXTANS = yes ]] ; then
+	eval cp -R ${DIR}/kexts/LiluFriend.kext/ ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/kexts/Other/
+	eval cp -R ${DIR}/kexts/Lilu.kext/ ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/kexts/Other/
+	eval cp -R ${DIR}/kexts/VirtualSMC.kext/ ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/kexts/Other/
+else
+	echo echo "Kexts will not be added."
+fi
+eval ${EX1T}
+cloudconfig
 }
 
 verifydeps()	#Verify and install dependencies
