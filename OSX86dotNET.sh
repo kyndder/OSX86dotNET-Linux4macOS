@@ -9,12 +9,15 @@
 #Part of the script was inspired for m13253's Clover-Linux-Installer (https://github.com/m13253/clover-linux-installer)
 #
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
 VERBOSE=""
 OPTA=""
 OPTC=""
 OPTD=""
 OPTE=""
 EX1T=""
+PARTITION=""
 
 while getopts "h?cavd:l" opt; do
     case "$opt" in
@@ -158,7 +161,19 @@ if [[ $WELCANS = YES ]] || [[ $WELCANS = yes ]] ; then
 else
 	exit 0
 fi
-} 
+}
+
+verifydeps()	#Verify and install dependencies
+{
+clear
+echo "Before we start, we must check some dependencies and install it, if needed.
+You can check later, all that is done by this script at the ${LOG_FILE}"
+sleep 5
+deps
+CHKDEPS
+CLVDEPS
+eval ${EX1T}
+}
 
 system_dump()	#Dumping system information
 {
@@ -509,24 +524,25 @@ else
 
 fi
 eval ${EX1T}
-} 
+}  >> ${LOG_FILE}
 
 CLUEFI()	#Installing Clover for UEFI boot
 {
-eval mkdir ${HOME}/${DEST_PATH}/Clover/temp_folder/ 
-eval mount -t msdos /dev/${PARTITION} ${HOME}/${DEST_PATH}/Clover/temp_folder/  >> ${LOG_FILE}
-eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Clover.pkg/EFIFolder.pkg/EFI/ ${HOME}/${DEST_PATH}/Clover/temp_folder/ >> ${LOG_FILE}
-eval mkdir ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/drivers64UEFI/    
-DRVLIST="(ls ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ | grep "64.UEFI")" >> ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI.txt
-eval mkdir ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI   
+eval sudo mkdir /run/media/${USER}/CloverEFI/ 
+eval sudo mount -t msdos /dev/${PARTITION} /run/media/${USER}/CloverEFI/  
+eval sudo cp -rfp ${HOME}/${DEST_PATH}/Clover/Clover.pkg/EFIFolder.pkg/EFI/ /run/media/${USER}/CloverEFI/ 
+eval sudo mkdir /run/media/${USER}/CloverEFI/EFI/CLOVER/drivers64UEFI/
+DRVLIST="$(ls ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ | grep "64.UEFI")"
+eval echo ${DRVLIST} >> ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI.txt
+eval mkdir ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI >>
 for i in ${HOME}/${DEST_PATH}/Clover/Clover.pkg/*
 do
    	eval cd ${i}    
-    eval cp *.efi ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/ >> ${LOG_FILE}
+    eval cp -rfp *.efi ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/
 done
 eval cd ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/
-eval sudo cp DataHubDxe-64.efi Fat-64.efi FSInject-64.efi HFSPlus-64.efi ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/drivers64UEFI/ >> ${LOG_FILE} 
-eval sudo cp OsxFatBinaryDrv-64.efi PartitionDxe-64.efi VBoxExt4.efi ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/drivers64UEFI/ >> ${LOG_FILE}
+eval sudo cp -rfp DataHubDxe-64.efi Fat-64.efi FSInject-64.efi HFSPlus-64.efi /run/media/${USER}/CloverEFI/EFI/CLOVER/drivers64UEFI/ 
+eval sudo cp -rfp OsxFatBinaryDrv-64.efi PartitionDxe-64.efi VBoxExt4.efi /run/media/${USER}/CloverEFI/EFI/CLOVER/drivers64UEFI/
 clear
 echo "Only a basic set of EFI drivers were installed, you can find additional divers at the temp_folder
 ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/drivers64UEFI/
@@ -534,29 +550,20 @@ ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/drivers64UEFI/
 Do you want to view a list of available EFI drivers? Please write YES or NO."
 read CLUEFIANS90
 if [[ $CLUEFIANS90 = YES ]] || [[ $CLUEFIANS90 = yes ]] ; then
-	eval less -F -X ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI.txt
-else
-	UNMPART
+	for i in ${DRVLIST} ; do
+		echo "$i"
+	done
+	echo
+	echo "Do you want to exit? Please write YES or NO."
+	read C90
+	if [[ $C90 = YES ]] || [[ $C90 = yes ]] ; then
+		exit 0
+	else
+		cloudconfig
+	fi
 fi
 eval ${EX1T}
-UNMPART
-} 
-
-UNMPART()	#Unmounting partition
-{
-echo
-echo "Do you want to unmount $PARTION ?
-
-Please write YES or NO."
-read EXITANS
-if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] ; then
-	eval sudo umount ${HOME}/${DEST_PATH}/Clover/temp_folder/ >> ${LOG_FILE}
-	eval rm -rf ${HOME}/${DEST_PATH}/Clover/temp_folder/ >> ${LOG_FILE}
-else
-	echo echo "Clover Boot Loader was successfully installed! Exiting."
-fi
-cloudconfig
-} 
+}  >> ${LOG_FILE}
 
 cloudconfig()	#Open Clover Cloud Configurator
 {
@@ -568,23 +575,45 @@ Please write YES or NO."
 read CLCLOU
 if [[ $CLCLOU = YES ]] || [[ $CLCLOU = yes ]] ; then
 	xdg-open http://cloudclovereditor.altervista.org/cce/index.php
-else
-	echo echo "Clover Boot Loader was successfully installed! Exiting."
 fi
 eval ${EX1T}
+addkexts
 }
 
-verifydeps()	#Verify and install dependencies
+addkexts()
 {
-clear
-echo "Before we start, we must check some dependencies and install it, if needed.
-You can check later, all that is done by this script at the ${LOG_FILE}"
-sleep 5
-deps
-CHKDEPS
-CLVDEPS
+echo
+echo "Do you want to add a basic set of kexts?
+This option will add Lilu.kext, VirtualSMC.kext and LiluFriend.kext.
+
+Please write YES or NO."
+read KEXTANS
+if [[ $KEXTANS = YES ]] || [[ $KEXTANS = yes ]] ; then
+	eval cp -rf ${DIR}/kexts/LiluFriend.kext/ /run/media/${USER}/CloverEFI/EFI/CLOVER/kexts/Other/
+	eval cp -rf ${DIR}/kexts/Lilu.kext/ /run/media/${USER}/CloverEFI/EFI/CLOVER/kexts/Other/
+	eval cp -rf ${DIR}/kexts/VirtualSMC.kext/ /run/media/${USER}/CloverEFI/EFI/CLOVER/kexts/Other/
+	echo "Kexts added!"
+else
+	echo "Kexts will not be added."
+fi
 eval ${EX1T}
-}
+UNMPART
+}  >> ${LOG_FILE}
+
+UNMPART()	#Unmounting partition
+{
+echo
+echo "Do you want to unmount $PARTION ?
+
+Please write YES or NO."
+read EXITANS
+if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] ; then
+	eval sudo umount /run/media/${USER}/CloverEFI/ >> ${LOG_FILE}
+	eval sudo rm -rf /run/media/${USER}/CloverEFI/ >> ${LOG_FILE}
+else
+	echo "Clover Boot Loader was successfully installed! Exiting."
+fi
+} 
 
 runall()	#Run all tasks
 {
