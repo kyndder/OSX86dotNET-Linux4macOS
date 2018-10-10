@@ -126,10 +126,10 @@ do
 	grep "${OS[i]}" /etc/os-release > =TMP
 	case $? in
 		0 )
-		OSTYPE="${OS[i]}" >> ${LOG_FILE}
-		PACMAN="${PKM[i]}" >> ${LOG_FILE}
-		echo Found $OSTYPE ! >> ${LOG_FILE}
-		echo Using native package manager! >> ${LOG_FILE}
+		OSTYPE="${OS[i]}"  
+		PACMAN="${PKM[i]}"  
+		echo Found $OSTYPE !  
+		echo Using native package manager!  
 	esac
 done
 } 
@@ -140,7 +140,7 @@ echo "$OSTYPE" | grep ""
 
 case "$OSTYPE" in
 '')
-cat /etc/os-release | echo "${NAME}" >> ${LOG_FILE}
+cat /etc/os-release | echo "${NAME}"  
 echo "Unsupported OS, please, send a report."
 exit 1
 esac
@@ -225,7 +225,7 @@ else
 	echo
 fi
 eval ${EX1T}
-} >> ${LOG_FILE}
+}  
 
 acpi_tool()	#Check IASL
 {
@@ -238,15 +238,15 @@ read ACPIANS
 if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] ; then
 	if command -v iasl > /dev/null 2>&1 ; then 
 		DP2="iasl" 
-		eval echo "${DP2} found! You already have ACPI tools installed at your system."
+		eval echo "${DP2} found! You already have ACPI tools installed at your system."  
 		echo
 		echo
 	else
 		DP2="acpica" 
-		echo "ACPI tools not found, installing package using package manager"
-    	eval sudo ${PACMAN} $DP2 
+		echo "ACPI tools not found, installing package using package manager"  
+    	eval sudo ${PACMAN} $DP2  
     	if [ $? -eq 0 ] ; then
-    		echo "ACPI tools successful instaled"
+    		echo "ACPI tools successful instaled"  
     	else
     		echo "An unknown error occured, please send a report"
     		exit 1
@@ -254,19 +254,19 @@ if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] ; then
     fi
 fi
 eval ${EX1T}
-} >> ${LOG_FILE}
+}
 
 deps()	#Check dependencies
 {
 for i in `seq 1 3`
 do
 	if command -v ${DP[i]} > /dev/null 2>&1 ; then 
-		echo "${DP[i]} found!" 
+		echo "${DP[i]} found!"  
 	else
-		echo "${DP[i]} not found, installing package using package manager"
+		echo "${DP[i]} not found, installing package using package manager"  
     	eval sudo ${PACMAN} ${DP[i]} 
     	if [ $? -eq 0 ] ; then
-    		echo "${DP[i]} successful instaled"
+    		echo "${DP[i]} successful instaled"  
     	else
     		echo "An unknown error occured, please send a report"
     		exit 1
@@ -274,7 +274,7 @@ do
 	fi
 done
 eval ${EX1T}
-} >> ${LOG_FILE}
+} 
 
 acpidump()	#Dumping ACPI Table
 {
@@ -308,7 +308,7 @@ if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] ; then
     fi
 fi
 eval ${EX1T}
-} >> ${LOG_FILE}
+}
 
 applefs()	#Check dependencies, compile and install APFS-Fuse drivers
 {
@@ -343,13 +343,13 @@ CHKDEPS()	#Check APFS-Fuse dependencies
 {
 for i in `seq 6 10`
 do
-	if pacman -Qk ${DP[i]} > /dev/null 2>&1 ; then >> 
-		echo "${DP[i]} found!" 
+	if pacman -Qk ${DP[i]} > /dev/null 2>&1 ; then
+		echo "${DP[i]} found!"  
 	else
-		echo "${DP[i]} not found, installing package using package manager"
+		echo "${DP[i]} not found, installing package using package manager"  
 	    eval sudo ${PACMAN} ${DP[i]} 
 	    if [ $? -eq 0 ] ; then
-	    	echo "${DP[i]} successful instaled"
+	    	echo "${DP[i]} successful instaled"  
 	    else
 	    	echo "An unknown error occured, please send a report"
 	    	exit 1
@@ -357,11 +357,11 @@ do
 	fi
 done
 eval ${EX1T}
-} >> ${LOG_FILE}
+}
 
 GITCLONE()	#Clone APFS-Fuse repository
 {
-eval git clone https://github.com/sgan81/apfs-fuse.git ${HOME}/${DEST_PATH}/apfs-fuse/ >> ${LOG_FILE}
+eval git clone https://github.com/sgan81/apfs-fuse.git ${HOME}/${DEST_PATH}/apfs-fuse/  
 if [ $? -eq 0 ] ; then
    	echo "git clone successful"
 else
@@ -372,7 +372,7 @@ eval cd ${HOME}/${DEST_PATH}/apfs-fuse/
 git submodule init
 git submodule update
 eval ${EX1T}
-} >> ${LOG_FILE}
+} 
 
 APFSMAKE()	#Compile APFS-Fuse driver
 {
@@ -388,7 +388,7 @@ else
     exit 1
 fi
 eval ${EX1T}
-} >> ${LOG_FILE}
+} 
 
 MVDRIVER() #Move APFS-Fuse driver
 {
@@ -396,10 +396,10 @@ clear
 echo "Now, we must move the drivers to your working PATH, please, provide
 your password if needed"
 
-eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/bin/* /usr/local/bin/ >> ${LOG_FILE}
-eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/lib/* /usr/lib/ >> ${LOG_FILE}
+eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/bin/* /usr/local/bin/  
+eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/lib/* /usr/lib/  
 eval ${EX1T}
-} >> ${LOG_FILE}
+} 
 
 clover_ask()	#Install Clover to disk
 {
@@ -425,17 +425,17 @@ CLVDEPS()	#Check Clover dependencies
 {
 for i in `seq 11 16`
 do 
-	if ( command -v ${DP[i]} > /dev/null 2>&1 ) || ( pacman -Qi ${DP[i]} > /dev/null 2>&1 ) ; then >> ${LOG_FILE}
-		echo "${DP[i]} found!" >> ${LOG_FILE}
+	if ( command -v ${DP[i]} > /dev/null 2>&1 ) || ( pacman -Qi ${DP[i]} > /dev/null 2>&1 ) ; then  
+		echo "${DP[i]} found!"    
 	else
-		echo "${DP[i]} not found, installing package using package manager"
-    	eval sudo ${PACMAN} ${DP[i]} >> ${LOG_FILE}
+		echo "${DP[i]} not found, installing package using package manager"  
+    	eval sudo ${PACMAN} ${DP[i]}  
     	if [ $? -eq 0 ] ; then
-    		echo "${DP[i]} successful instaled"
+    		echo "${DP[i]} successful instaled"  
     	else
-    		eval sudo yay -Syyu --noconfirm ${DP[i]} >> ${LOG_FILE}
+    		eval sudo yay -Syyu --noconfirm ${DP[i]}  
     		if [ $? -eq 0 ] ; then
-    			echo "${DP[i]} successful instaled"
+    			echo "${DP[i]} successful instaled" 
     		else
     			echo "An unknown error occured, please send a report"
     			exit 1
@@ -444,7 +444,7 @@ do
 	fi
 done
 eval ${EX1T}
-} >> ${LOG_FILE}
+}
 
 LISTDISKS()	#Listing available disks
 {
@@ -472,7 +472,7 @@ else
     exit 1
 fi
 eval ${EX1T}
-} >> ${LOG_FILE}
+} 
 
 cl_uefi_bios()	#Choose between UEFI or Legacy BIOS
 {
@@ -504,18 +504,18 @@ read UEFIANS
 if [[ $UEFIANS = YES ]] || [[ $UEFIANS = yes ]] ; then
     eval mkdir ${HOME}/${DEST_PATH}/Clover/
 	eval cd ${HOME}/${DEST_PATH}/Clover/ 
-    wget https://sourceforge.net/projects/cloverefiboot/files/latest/download >> ${LOG_FILE}
+    wget https://sourceforge.net/projects/cloverefiboot/files/latest/download  
     eval mv download Clover.zip
-    7z x Clover.zip >> ${LOG_FILE}
+    7z x Clover.zip  
 	eval mkdir ${HOME}/${DEST_PATH}/Clover/Clover.pkg
 	eval mv Clover_*.pkg ${HOME}/${DEST_PATH}/Clover/Clover.pkg/
 	eval cd ${HOME}/${DEST_PATH}/Clover/Clover.pkg/
-	xar -xzf Clover_*.pkg >> ${LOG_FILE}
+	xar -xzf Clover_*.pkg  
 	rm -rf Clover_*.pkg
 	for i in ${HOME}/${DEST_PATH}/Clover/Clover.pkg/*
 	do
     	eval cd ${i}
-        cat Payload | gzip -c -d | cpio -i >> ${LOG_FILE}
+        cat Payload | gzip -c -d | cpio -i  
         rm -rf Bom PackageInfo Payload Scripts
 	done
 else
@@ -524,7 +524,7 @@ else
 
 fi
 eval ${EX1T}
-}  >> ${LOG_FILE}
+}  
 
 CLUEFI()	#Installing Clover for UEFI boot
 {
@@ -534,7 +534,7 @@ eval sudo cp -rfp ${HOME}/${DEST_PATH}/Clover/Clover.pkg/EFIFolder.pkg/EFI/ /run
 eval sudo mkdir /run/media/${USER}/CloverEFI/EFI/CLOVER/drivers64UEFI/
 DRVLIST="$(ls ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ | grep "64.UEFI")"
 eval echo ${DRVLIST} >> ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI.txt
-eval mkdir ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI >>
+eval mkdir ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI
 for i in ${HOME}/${DEST_PATH}/Clover/Clover.pkg/*
 do
    	eval cd ${i}    
@@ -564,7 +564,7 @@ if [[ $CLUEFIANS90 = YES ]] || [[ $CLUEFIANS90 = yes ]] ; then
 fi
 eval ${EX1T}
 cloudconfig
-} >> ${LOG_FILE}
+} 
 
 cloudconfig()	#Open Clover Cloud Configurator
 {
@@ -599,7 +599,7 @@ else
 fi
 eval ${EX1T}
 UNMPART
-}  >> ${LOG_FILE}
+}  
 
 UNMPART()	#Unmounting partition
 {
@@ -609,13 +609,13 @@ echo "Do you want to unmount $PARTION ?
 Please write YES or NO."
 read EXITANS
 if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] ; then
-	eval sudo umount /run/media/${USER}/CloverEFI/ >> ${LOG_FILE}
-	eval sudo rm -rf /run/media/${USER}/CloverEFI/ >> ${LOG_FILE}
+	eval sudo umount /run/media/${USER}/CloverEFI/  
+	eval sudo rm -rf /run/media/${USER}/CloverEFI/  
 else
 	echo "Clover Boot Loader was successfully installed! Exiting."
 fi
 eval ${EX1T}
-} >> ${LOG_FILE}
+} 
 
 runall()	#Run all tasks
 {
