@@ -563,7 +563,23 @@ if [[ $CLUEFIANS90 = YES ]] || [[ $CLUEFIANS90 = yes ]] ; then
 	fi
 fi
 eval ${EX1T}
-}  >> ${LOG_FILE}
+cloudconfig
+} 
+
+UNMPART()	#Unmounting partition
+{
+echo
+echo "Do you want to unmount $PARTION ?
+
+Please write YES or NO."
+read EXITANS
+if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] ; then
+	eval sudo umount ${HOME}/${DEST_PATH}/Clover/temp_folder/ >> ${LOG_FILE}
+	eval rm -rf ${HOME}/${DEST_PATH}/Clover/temp_folder/ >> ${LOG_FILE}
+else
+	echo echo "Clover Boot Loader was successfully installed! Exiting."
+fi
+} 
 
 cloudconfig()	#Open Clover Cloud Configurator
 {
@@ -577,10 +593,29 @@ if [[ $CLCLOU = YES ]] || [[ $CLCLOU = yes ]] ; then
 	xdg-open http://cloudclovereditor.altervista.org/cce/index.php
 fi
 eval ${EX1T}
-addkexts
+UNMPART
 }
 
 addkexts()
+{
+echo
+echo "Do you want to add a basic set of kexts?
+This option will add Lilu.kext, VirtualSMC.kext and LiluFriend.kext.
+
+Please write YES or NO."
+read KEXTANS
+if [[ $KEXTANS = YES ]] || [[ $KEXTANS = yes ]] ; then
+	eval cp -R ${DIR}/kexts/LiluFriend.kext/ ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/kexts/Other/
+	eval cp -R ${DIR}/kexts/Lilu.kext/ ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/kexts/Other/
+	eval cp -R ${DIR}/kexts/VirtualSMC.kext/ ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/kexts/Other/
+else
+	echo echo "Kexts will not be added."
+fi
+eval ${EX1T}
+cloudconfig
+}
+
+verifydeps()	#Verify and install dependencies
 {
 echo
 echo "Do you want to add a basic set of kexts?
