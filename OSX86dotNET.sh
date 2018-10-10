@@ -211,7 +211,7 @@ They are necessary to, for example, build packages.
 Please write YES or NO"
 read ANSWER
 if [[ $APFSANS = YES ]] || [[ $APFSANS = yes ]] ; then
-	eval sudo ${PACMAN} ${DP[4]} ${DP[5]} >> ${LOG_FILE}
+	eval sudo ${PACMAN} ${DP[4]} ${DP[5]} 
 	if [ $? -eq 0 ] ; then
     	echo "Developer tools successfully instaled"
     else
@@ -225,7 +225,7 @@ else
 	echo
 fi
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 acpi_tool()	#Check IASL
 {
@@ -236,15 +236,15 @@ They are necessary to retrieve and decompile ACPI table from your system.
 Please write YES or NO"
 read ACPIANS
 if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] ; then
-	if command -v iasl > /dev/null 2>&1 ; then >> ${LOG_FILE}
-		DP2="iasl" >> ${LOG_FILE}
+	if command -v iasl > /dev/null 2>&1 ; then 
+		DP2="iasl" 
 		eval echo "${DP2} found! You already have ACPI tools installed at your system."
 		echo
 		echo
 	else
-		DP2="acpica" >> ${LOG_FILE}
+		DP2="acpica" 
 		echo "ACPI tools not found, installing package using package manager"
-    	eval sudo ${PACMAN} $DP2 >> ${LOG_FILE}
+    	eval sudo ${PACMAN} $DP2 
     	if [ $? -eq 0 ] ; then
     		echo "ACPI tools successful instaled"
     	else
@@ -254,17 +254,17 @@ if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] ; then
     fi
 fi
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 deps()	#Check dependencies
 {
 for i in `seq 1 3`
 do
-	if command -v ${DP[i]} > /dev/null 2>&1 ; then >> ${LOG_FILE}
-		echo "${DP[i]} found!" >> ${LOG_FILE}
+	if command -v ${DP[i]} > /dev/null 2>&1 ; then 
+		echo "${DP[i]} found!" 
 	else
 		echo "${DP[i]} not found, installing package using package manager"
-    	eval sudo ${PACMAN} ${DP[i]} >> ${LOG_FILE}
+    	eval sudo ${PACMAN} ${DP[i]} 
     	if [ $? -eq 0 ] ; then
     		echo "${DP[i]} successful instaled"
     	else
@@ -274,7 +274,7 @@ do
 	fi
 done
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 acpidump()	#Dumping ACPI Table
 {
@@ -287,20 +287,20 @@ ATTENTION! ACPI tools are needed in order to make dumps.
 Please write YES or NO"
 read ACPIANS
 if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] ; then
-	if command -v iasl > /dev/null 2>&1 ; then >> ${LOG_FILE}
-		DP2="iasl" >> ${LOG_FILE}
+	if command -v iasl > /dev/null 2>&1 ; then 
+		DP2="iasl" 
 		mkdir -p "$HOME/$DEST_PATH/DAT/"
 		echo "Geting tables."
-		ls /sys/firmware/acpi/tables/ | grep -vwE "data|dynamic" > "$HOME/$DEST_PATH/ACPI_Table_List.txt" >> ${LOG_FILE}
+		ls /sys/firmware/acpi/tables/ | grep -vwE "data|dynamic" > "$HOME/$DEST_PATH/ACPI_Table_List.txt" 
 		cd "$HOME/$DEST_PATH/"
 		for i in $(cat ACPI_Table_List.txt) ; do
-    		sudo cat "/sys/firmware/acpi/tables/$i" > "$HOME/$DEST_PATH/DAT/$i.dat" >> ${LOG_FILE}
+    		sudo cat "/sys/firmware/acpi/tables/$i" > "$HOME/$DEST_PATH/DAT/$i.dat" 
     	done
     	echo "Decompiling tables."
     	cd "$HOME/$DEST_PATH/DAT/"
     	for i in *
     	do
-      		eval iasl -d "${i}" >> ${LOG_FILE}
+      		eval iasl -d "${i}" 
     	done
     	echo "Cleaning up."
     	mkdir -p "$HOME/$DEST_PATH/DSL/"
@@ -308,7 +308,7 @@ if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] ; then
     fi
 fi
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 applefs()	#Check dependencies, compile and install APFS-Fuse drivers
 {
@@ -343,11 +343,11 @@ CHKDEPS()	#Check APFS-Fuse dependencies
 {
 for i in `seq 6 10`
 do
-	if pacman -Qk ${DP[i]} > /dev/null 2>&1 ; then >> ${LOG_FILE}
-		echo "${DP[i]} found!" >> ${LOG_FILE}
+	if pacman -Qk ${DP[i]} > /dev/null 2>&1 ; then >> 
+		echo "${DP[i]} found!" 
 	else
 		echo "${DP[i]} not found, installing package using package manager"
-	    eval sudo ${PACMAN} ${DP[i]} >> ${LOG_FILE}
+	    eval sudo ${PACMAN} ${DP[i]} 
 	    if [ $? -eq 0 ] ; then
 	    	echo "${DP[i]} successful instaled"
 	    else
@@ -357,7 +357,7 @@ do
 	fi
 done
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 GITCLONE()	#Clone APFS-Fuse repository
 {
@@ -372,15 +372,15 @@ eval cd ${HOME}/${DEST_PATH}/apfs-fuse/
 git submodule init
 git submodule update
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 APFSMAKE()	#Compile APFS-Fuse driver
 {
 eval cd ${HOME}/${DEST_PATH}/apfs-fuse
-mkdir build >> ${LOG_FILE}
-cd build >> ${LOG_FILE}
-cmake .. >> ${LOG_FILE}
-make >> ${LOG_FILE}
+mkdir build 
+cd build 
+cmake .. 
+make 
 if [ $? -eq 0 ] ; then
    	echo "compilation successful"
 else
@@ -388,7 +388,7 @@ else
     exit 1
 fi
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 MVDRIVER() #Move APFS-Fuse driver
 {
@@ -399,7 +399,7 @@ your password if needed"
 eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/bin/* /usr/local/bin/ >> ${LOG_FILE}
 eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/lib/* /usr/lib/ >> ${LOG_FILE}
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 clover_ask()	#Install Clover to disk
 {
@@ -444,7 +444,7 @@ do
 	fi
 done
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 LISTDISKS()	#Listing available disks
 {
@@ -472,7 +472,7 @@ else
     exit 1
 fi
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 cl_uefi_bios()	#Choose between UEFI or Legacy BIOS
 {
@@ -564,22 +564,7 @@ if [[ $CLUEFIANS90 = YES ]] || [[ $CLUEFIANS90 = yes ]] ; then
 fi
 eval ${EX1T}
 cloudconfig
-} 
-
-UNMPART()	#Unmounting partition
-{
-echo
-echo "Do you want to unmount $PARTION ?
-
-Please write YES or NO."
-read EXITANS
-if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] ; then
-	eval sudo umount ${HOME}/${DEST_PATH}/Clover/temp_folder/ >> ${LOG_FILE}
-	eval rm -rf ${HOME}/${DEST_PATH}/Clover/temp_folder/ >> ${LOG_FILE}
-else
-	echo echo "Clover Boot Loader was successfully installed! Exiting."
-fi
-} 
+} >> ${LOG_FILE}
 
 cloudconfig()	#Open Clover Cloud Configurator
 {
@@ -593,29 +578,10 @@ if [[ $CLCLOU = YES ]] || [[ $CLCLOU = yes ]] ; then
 	xdg-open http://cloudclovereditor.altervista.org/cce/index.php
 fi
 eval ${EX1T}
-UNMPART
+addkexts
 }
 
 addkexts()
-{
-echo
-echo "Do you want to add a basic set of kexts?
-This option will add Lilu.kext, VirtualSMC.kext and LiluFriend.kext.
-
-Please write YES or NO."
-read KEXTANS
-if [[ $KEXTANS = YES ]] || [[ $KEXTANS = yes ]] ; then
-	eval cp -R ${DIR}/kexts/LiluFriend.kext/ ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/kexts/Other/
-	eval cp -R ${DIR}/kexts/Lilu.kext/ ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/kexts/Other/
-	eval cp -R ${DIR}/kexts/VirtualSMC.kext/ ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/kexts/Other/
-else
-	echo echo "Kexts will not be added."
-fi
-eval ${EX1T}
-cloudconfig
-}
-
-verifydeps()	#Verify and install dependencies
 {
 echo
 echo "Do you want to add a basic set of kexts?
@@ -648,7 +614,8 @@ if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] ; then
 else
 	echo "Clover Boot Loader was successfully installed! Exiting."
 fi
-} 
+eval ${EX1T}
+} >> ${LOG_FILE}
 
 runall()	#Run all tasks
 {
