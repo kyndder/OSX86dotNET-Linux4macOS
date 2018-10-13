@@ -61,3 +61,9 @@ pacapt team > https://github.com/icy/pacapt/blob/master/pacapt#L168
 m13253's > https://github.com/m13253/clover-linux-installer
 
 sgan81 > https://github.com/sgan81/apfs-fuse
+
+Clover Team > https://sourceforge.net/projects/cloverefiboot/
+
+Acidanthera Team > https://github.com/acidanthera
+
+kylon > http://cloudclovereditor.altervista.org/cce/index.php
