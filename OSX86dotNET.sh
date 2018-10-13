@@ -145,7 +145,21 @@ cat /etc/os-release | echo "${NAME}"
 echo "Unsupported OS, please, send a report."
 exit 1
 esac
-} >> ${LOG_FILE}
+clear
+eval find /home/${USER}/OSX86dotNET/* 
+if [ $? -eq 0 ] ; then
+	echo
+	echo
+    echo "There are some files at the $DEST_PATH folder.
+Do you want to cleanup or keep it?
+
+Please press C for clean or K to keep."
+	read VENTANS
+	if [[ $VENTANS = C ]] || [[ $VENTANS = c ]] ; then
+		eval sudo rm -rf ${HOME}/${DEST_PATH}/*
+	fi
+fi
+}
 
 hello() #Hello!
 {
@@ -440,7 +454,7 @@ else
     echo "Clover Bootloader will not be installed."
     echo
 	echo
-	echo
+	exit 0
 fi
 eval ${EX1T}
 } 
@@ -469,43 +483,6 @@ fi
 eval ${EX1T}
 } 
 
-dofilesystem()
-{
-echo
-echo "Creating filesystem, please, be patient, this may take a while."
-echo
-eval sudo dd if=/dev/zero of=/dev/${DISK} bs=512 count=1 conv=notrunc &&
-sleep 5
-sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk /dev/${DISK}
-g			# create new GPT partition
-n			# add new partition
-1			# partition number
-			# default - first sector 
-+200MiB 	# partition size
-n			# add new partition
-2			# partition number
-			# default - first sector 
-			# default - last sector 
-t			# change partition type
-1			# partition number
-1			# EFI System partition
-t			# change partition type
-2			# partition number
-38			# HFS/HFS+ partition
-x			# extra features
-n			# change partition name
-1			# partition number
-EFI			# EFI partition name
-n			# change partition name
-2			# partition number
-macOS		# macOS partition
-r			# return main menu
-w			# write partition table and exit
-FDISK_CMDS
-sudo mkfs.fat /dev/${DISK}1 -n EFI &&
-sudo mkfs.hfsplus -F 32 /dev/${DISK}2 -v macOS 
-} >> ${LOG_FILE}
-
 cl_uefi_bios()	#Choose between UEFI or Legacy BIOS
 {
 clear
@@ -515,7 +492,6 @@ Please write UEFI or BIOS"
 read CLANS
 if [[ $CLANS = UEFI ]] || [[ $CLANS = uefi ]] ; then
 	LISTDISKS
-	dofilesystem
 	EXTRACL
 	CLUEFI
 else
@@ -547,36 +523,31 @@ if [[ $UEFIANS = YES ]] || [[ $UEFIANS = yes ]] ; then
 	for i in ${HOME}/${DEST_PATH}/Clover/Clover.pkg/*
 	do
     	eval cd ${i}
-        cat Payload | gzip -c -d -q | cpio -i &>> ${LOG_FILE}
-        rm -rf Bom PackageInfo Payload Scripts &>> ${LOG_FILE}
+        cat Payload | gzip -c -d -q | cpio -i 2> /dev/null
+        rm -rf Bom PackageInfo Payload Scripts 
 	done
 else
 	echo "OK, exiting"
     exit 0
-
 fi
 eval ${EX1T}
 }  
 
 CLUEFI()	#Installing Clover for UEFI boot
 {
-eval udisksctl mount -t msdos -b /dev/${DISK}1 &>> ${LOG_FILE}
-eval TARGET="$( mount | grep "/dev/${DISK}1\b" | gawk "{print \$3}" )"
-echo ${TARGET} >> ${LOG_FILE}
-sleep 5
-eval rsync -arv ${HOME}/${DEST_PATH}/Clover/Clover.pkg/EFIFolder.pkg/EFI/ ${HOME}/${DEST_PATH}/Clover/EFI/ &>> ${LOG_FILE}
+eval cp -R ${HOME}/${DEST_PATH}/Clover/Clover.pkg/EFIFolder.pkg/EFI/ ${HOME}/${DEST_PATH}/Clover/EFI/ &>> ${LOG_FILE}
 DRVLIST="$(ls ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ | grep "64.UEFI")" &>> ${LOG_FILE}
 eval echo ${DRVLIST} >> ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI.txt &>> ${LOG_FILE}
 eval mkdir ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI &>> ${LOG_FILE}
 for i in ${HOME}/${DEST_PATH}/Clover/Clover.pkg/*
 do
    	eval cd ${i}    
-    eval rsync -arv *.efi ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/ &>> ${LOG_FILE}
+    eval cp -R *.efi ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/ &>> ${LOG_FILE}
 done
 eval sudo mkdir ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ &>> ${LOG_FILE}
 eval cd ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/ &>> ${LOG_FILE}
-eval rsync -arv DataHubDxe-64.efi Fat-64.efi FSInject-64.efi HFSPlus-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ &>> ${LOG_FILE}
-eval rsync -arv OsxFatBinaryDrv-64.efi PartitionDxe-64.efi VBoxExt4.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ &>> ${LOG_FILE}
+eval sudo cp -R DataHubDxe-64.efi Fat-64.efi FSInject-64.efi HFSPlus-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ &>> ${LOG_FILE}
+eval sudo cp -R OsxFatBinaryDrv-64.efi PartitionDxe-64.efi VBoxExt4.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ &>> ${LOG_FILE}
 clear
 echo "Only a basic set of EFI drivers were installed, you can find additional divers at the folder
 ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/drivers64UEFI/
@@ -617,7 +588,7 @@ eval ${EX1T}
 addkexts
 }
 
-addkexts()
+addkexts() #Adding basic kexts
 {
 clear
 echo "Do you want to add a basic set of kexts?
@@ -626,19 +597,83 @@ This option will add Lilu.kext, VirtualSMC.kext and LiluFriend.kext.
 Please write YES or NO."
 read KEXTANS
 if [[ $KEXTANS = YES ]] || [[ $KEXTANS = yes ]] ; then
-	eval rsync -arvR ${DIR}/kexts/LiluFriend.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
-	eval rsync -arvR ${DIR}/kexts/Lilu.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
-	eval rsync -arvR ${DIR}/kexts/VirtualSMC.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
+	eval cp -R ${DIR}/kexts/ ${HOME}/${DEST_PATH}/Clover/
+	eval cd ${HOME}/${DEST_PATH}/Clover/kexts
+	7z x kexts.zip
+	eval sudo cp -R LiluFriend.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
+	eval sudo cp -R Lilu.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
+	eval sudo cp -R VirtualSMC.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
 	echo "Kexts added!"
 	clvfinish
 else
 	echo "Kexts will not be added."
 fi
 eval ${EX1T}
-clvfinish
-} 
+}
 
-clvfinish()
+docloverimg() #Create EFI image file
+{
+eval cd ${HOME}/${DEST_PATH}/Clover/
+sudo dd if=/dev/zero of=EFI.img count=199 bs=1M
+sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk EFI.img
+g			# create new GPT partition
+n			# add new partition
+1			# partition number
+			# default - first sector 
+			# partition size
+t			# change partition type
+1			# EFI System partition
+x			# extra features
+n			# change partition name
+EFI			# EFI partition name
+r			# return main menu
+w			# write partition table and exit
+FDISK_CMDS
+sudo mkfs.fat -F 32 EFI.img -n EFI
+sleep 3
+eval sudo mkdir /run/media/${USER}/CloverIMG/ &>> ${LOG_FILE}
+eval sudo mount -t vfat -o loop EFI.img /run/media/${USER}/CloverIMG/ &>> ${LOG_FILE}
+sleep 3
+} >> ${LOG_FILE}
+
+dofilesystem() #Formatting USB Stick for CLover
+{
+echo
+echo "Creating filesystem, please, be patient, this may take a while."
+echo
+eval sudo dd if=/dev/zero of=/dev/${DISK} bs=512 count=1 conv=notrunc &&
+sleep 5
+sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk /dev/${DISK}
+g			# create new GPT partition
+n			# add new partition
+1			# partition number
+			# default - first sector 
++200MiB 	# partition size
+n			# add new partition
+2			# partition number
+			# default - first sector 
+			# default - last sector 
+t			# change partition type
+1			# partition number
+1			# EFI System partition
+t			# change partition type
+2			# partition number
+38			# HFS/HFS+ partition
+x			# extra features
+n			# change partition name
+1			# partition number
+EFI			# EFI partition name
+n			# change partition name
+2			# partition number
+macOS		# macOS partition
+r			# return main menu
+w			# write partition table and exit
+FDISK_CMDS
+sudo mkfs.fat -F 32 /dev/${DISK}1 -n EFI &&
+sudo mkfs.hfsplus /dev/${DISK}2 -v macOS 
+} >> ${LOG_FILE}
+
+clvfinish() #Writting Clover to EFI partition
 {
 clear
 echo "Now, we must move everything to its own place...
@@ -648,11 +683,20 @@ echo
 echo
 echo "Finishing tasks..."
 sleep 2
-eval cd ${HOME}/${DEST_PATH}/Clover/EFI/
-find . -type d -exec mkdir -p "$TARGET{}" \; &>> ${LOG_FILE}
-find . -type f -exec dd if={} of="$TARGET{}" bs=8M oflag=direct \; &>> ${LOG_FILE}
-#eval sudo rsync -arvR EFI/ ${TARGET} &>> ${LOG_FILE}
+docloverimg
+sleep 2
+eval cd ${HOME}/${DEST_PATH}/Clover/ &>> ${LOG_FILE}
+eval sudo cp -R EFI/ /run/media/${USER}/CloverIMG/ &>> ${LOG_FILE}
 sleep 1
+eval sudo umount /run/media/${USER}/CloverIMG/ &>> ${LOG_FILE}
+sleep 1
+eval sudo rm -rf /run/media/${USER}/CloverIMG/ &>> ${LOG_FILE}
+dofilesystem
+sleep 1
+eval cd ${HOME}/${DEST_PATH}/Clover/
+eval sudo dd if=EFI.img of=/dev/${DISK}1 bs=1M &>> ${LOG_FILE}
+sleep 1
+eval udisksctl mount -t vfat -b /dev/${DISK}1 &>> ${LOG_FILE}
 eval ${EX1T}
 UNMPART
 } 
@@ -670,17 +714,15 @@ if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] ; then
 	
 Thank you for using OSX86dotNET Linux4macOS tool!"
 else
-	echo "Clover Boot Loader was successfully installed! Exiting.
+echo "Clover Boot Loader was successfully installed! Exiting.
 	
 Thank you for using OSX86dotNET Linux4macOS tool!"
 fi
 eval ${EX1T}
-} 
+}
 
 runall()	#Run all tasks -l
 {
-get_os
-vent
 hello
 verifydeps
 system_dump
