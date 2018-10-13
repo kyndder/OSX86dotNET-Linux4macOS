@@ -8,6 +8,7 @@ This are the current features:
   - Installs Clover Bootloader to disk for UEFI and Legacy boot.
   - Download and installs a Basic set of kexts (work in progress).
   - Install hfsprogs to access HFS and HFS+ formatted partitions.
+  - Compile and Install APFS-Fuse to access APFS formatted partitions.
   - Installs basic developments tools.
   - Installs ACPI tools.
   - Extracts and decompile ACPI Tables.
