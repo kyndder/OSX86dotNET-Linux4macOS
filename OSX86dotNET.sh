@@ -9,6 +9,11 @@
 #Part of the script was inspired for m13253's Clover-Linux-Installer (https://github.com/m13253/clover-linux-installer)
 #
 
+#Create working dir
+DEST_PATH="OSX86dotNET"
+
+LOG_FILE="$HOME/$DEST_PATH/logfile.log"
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 VERBOSE=""
@@ -17,7 +22,8 @@ OPTC=""
 OPTD=""
 OPTE=""
 EX1T=""
-PARTITION=""
+DISK=""
+TARGET=""
 
 while getopts "h?cavd:l" opt; do
     case "$opt" in
@@ -44,7 +50,7 @@ while getopts "h?cavd:l" opt; do
         ;;
     a)  OPTA="applefs"
         ;;
-    v)  VERBOSE="set -x"
+    v)  VERBOSE="set -v"
         ;;
     d)  EX1T="exit 0"
 		OPTD="$OPTARG"
@@ -59,12 +65,7 @@ done
 
 ${VERBOSE}
 
-#Create working dir
-DEST_PATH="OSX86dotNET"
-
 eval mkdir -p "$HOME/$DEST_PATH"
-
-LOG_FILE="$HOME/$DEST_PATH/logfile.log"
 
 #Known OSs
 OS[1]="Arch" #PACMAN
@@ -132,7 +133,7 @@ do
 		echo Using native package manager!  
 	esac
 done
-} 
+} >> ${LOG_FILE}
 
 vent()	#Exit if no known OS
 {
@@ -144,7 +145,7 @@ cat /etc/os-release | echo "${NAME}"
 echo "Unsupported OS, please, send a report."
 exit 1
 esac
-} 
+} >> ${LOG_FILE}
 
 hello() #Hello!
 {
@@ -174,6 +175,71 @@ CHKDEPS
 CLVDEPS
 eval ${EX1T}
 }
+
+deps()	#Check dependencies
+{
+for i in `seq 1 3`
+do
+	if command -v ${DP[i]} > /dev/null 2>&1 ; then 
+		echo "${DP[i]} found!"  
+	else
+		echo "${DP[i]} not found, installing package using package manager"  
+    	eval sudo ${PACMAN} ${DP[i]} 
+    	if [ $? -eq 0 ] ; then
+    		echo "${DP[i]} successful instaled"  
+    	else
+    		echo "An unknown error occured, please send a report"
+    		exit 1
+    	fi
+	fi
+done
+eval ${EX1T}
+} >> ${LOG_FILE}
+
+CHKDEPS()	#Check APFS-Fuse dependencies
+{
+for i in `seq 6 10`
+do
+	if pacman -Qk ${DP[i]} > /dev/null 2>&1 ; then
+		echo "${DP[i]} found!"  
+	else
+		echo "${DP[i]} not found, installing package using package manager"  
+	    eval sudo ${PACMAN} ${DP[i]} 
+	    if [ $? -eq 0 ] ; then
+	    	echo "${DP[i]} successful instaled"  
+	    else
+	    	echo "An unknown error occured, please send a report"
+	    	exit 1
+	    fi
+	fi
+done
+eval ${EX1T}
+} >> ${LOG_FILE}
+
+CLVDEPS()	#Check Clover dependencies
+{
+for i in `seq 11 16`
+do 
+	if ( command -v ${DP[i]} > /dev/null 2>&1 ) || ( pacman -Qi ${DP[i]} > /dev/null 2>&1 ) ; then  
+		echo "${DP[i]} found!"    
+	else
+		echo "${DP[i]} not found, installing package using package manager"  
+    	eval sudo ${PACMAN} ${DP[i]}  
+    	if [ $? -eq 0 ] ; then
+    		echo "${DP[i]} successful instaled"  
+    	else
+    		eval sudo yay -Syyu --noconfirm ${DP[i]}  
+    		if [ $? -eq 0 ] ; then
+    			echo "${DP[i]} successful instaled" 
+    		else
+    			echo "An unknown error occured, please send a report"
+    			exit 1
+    		fi
+    	fi
+	fi
+done
+eval ${EX1T}
+} >> ${LOG_FILE}
 
 system_dump()	#Dumping system information
 {
@@ -211,7 +277,7 @@ They are necessary to, for example, build packages.
 Please write YES or NO"
 read ANSWER
 if [[ $APFSANS = YES ]] || [[ $APFSANS = yes ]] ; then
-	eval sudo ${PACMAN} ${DP[4]} ${DP[5]} 
+	eval sudo ${PACMAN} ${DP[4]} ${DP[5]} >> ${LOG_FILE}
 	if [ $? -eq 0 ] ; then
     	echo "Developer tools successfully instaled"
     else
@@ -238,43 +304,23 @@ read ACPIANS
 if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] ; then
 	if command -v iasl > /dev/null 2>&1 ; then 
 		DP2="iasl" 
-		eval echo "${DP2} found! You already have ACPI tools installed at your system."  
+		eval echo "${DP2} found! You already have ACPI tools installed at your system." &>> ${LOG_FILE}
 		echo
 		echo
 	else
 		DP2="acpica" 
-		echo "ACPI tools not found, installing package using package manager"  
-    	eval sudo ${PACMAN} $DP2  
+		echo "ACPI tools not found, installing package using package manager" &>> ${LOG_FILE}
+    	eval sudo ${PACMAN} $DP2 >> ${LOG_FILE}
     	if [ $? -eq 0 ] ; then
-    		echo "ACPI tools successful instaled"  
+    		echo "ACPI tools successful instaled" &>> ${LOG_FILE}
     	else
-    		echo "An unknown error occured, please send a report"
+    		echo "An unknown error occured, please send a report" &>> ${LOG_FILE}
     		exit 1
     	fi
     fi
 fi
 eval ${EX1T}
 }
-
-deps()	#Check dependencies
-{
-for i in `seq 1 3`
-do
-	if command -v ${DP[i]} > /dev/null 2>&1 ; then 
-		echo "${DP[i]} found!"  
-	else
-		echo "${DP[i]} not found, installing package using package manager"  
-    	eval sudo ${PACMAN} ${DP[i]} 
-    	if [ $? -eq 0 ] ; then
-    		echo "${DP[i]} successful instaled"  
-    	else
-    		echo "An unknown error occured, please send a report"
-    		exit 1
-    	fi
-	fi
-done
-eval ${EX1T}
-} 
 
 acpidump()	#Dumping ACPI Table
 {
@@ -289,22 +335,22 @@ read ACPIANS
 if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] ; then
 	if command -v iasl > /dev/null 2>&1 ; then 
 		DP2="iasl" 
-		mkdir -p "$HOME/$DEST_PATH/DAT/"
-		echo "Geting tables."
-		ls /sys/firmware/acpi/tables/ | grep -vwE "data|dynamic" > "$HOME/$DEST_PATH/ACPI_Table_List.txt" 
+		mkdir -p "$HOME/$DEST_PATH/DAT/" >> ${LOG_FILE}
+		echo "Geting tables." &>> ${LOG_FILE}
+		ls /sys/firmware/acpi/tables/ | grep -vwE "data|dynamic" > "$HOME/$DEST_PATH/ACPI_Table_List.txt" &>> ${LOG_FILE}
 		cd "$HOME/$DEST_PATH/"
 		for i in $(cat ACPI_Table_List.txt) ; do
-    		sudo cat "/sys/firmware/acpi/tables/$i" > "$HOME/$DEST_PATH/DAT/$i.dat" 
+    		sudo cat "/sys/firmware/acpi/tables/$i" > "$HOME/$DEST_PATH/DAT/$i.dat" &>> ${LOG_FILE}
     	done
-    	echo "Decompiling tables."
+    	echo "Decompiling tables." &>> ${LOG_FILE}
     	cd "$HOME/$DEST_PATH/DAT/"
     	for i in *
     	do
-      		eval iasl -d "${i}" 
+      		eval iasl -d "${i}" &>> ${LOG_FILE}
     	done
-    	echo "Cleaning up."
-    	mkdir -p "$HOME/$DEST_PATH/DSL/"
-    	mv *.dsl "$HOME/$DEST_PATH/DSL/"
+    	echo "Cleaning up." &>> ${LOG_FILE}
+    	mkdir -p "$HOME/$DEST_PATH/DSL/" &>> ${LOG_FILE}
+    	mv *.dsl "$HOME/$DEST_PATH/DSL/" &>> ${LOG_FILE}
     fi
 fi
 eval ${EX1T}
@@ -339,26 +385,6 @@ fi
 eval ${EX1T}
 } 
 
-CHKDEPS()	#Check APFS-Fuse dependencies
-{
-for i in `seq 6 10`
-do
-	if pacman -Qk ${DP[i]} > /dev/null 2>&1 ; then
-		echo "${DP[i]} found!"  
-	else
-		echo "${DP[i]} not found, installing package using package manager"  
-	    eval sudo ${PACMAN} ${DP[i]} 
-	    if [ $? -eq 0 ] ; then
-	    	echo "${DP[i]} successful instaled"  
-	    else
-	    	echo "An unknown error occured, please send a report"
-	    	exit 1
-	    fi
-	fi
-done
-eval ${EX1T}
-}
-
 GITCLONE()	#Clone APFS-Fuse repository
 {
 eval git clone https://github.com/sgan81/apfs-fuse.git ${HOME}/${DEST_PATH}/apfs-fuse/  
@@ -372,7 +398,7 @@ eval cd ${HOME}/${DEST_PATH}/apfs-fuse/
 git submodule init
 git submodule update
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 APFSMAKE()	#Compile APFS-Fuse driver
 {
@@ -388,7 +414,7 @@ else
     exit 1
 fi
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 MVDRIVER() #Move APFS-Fuse driver
 {
@@ -399,13 +425,12 @@ your password if needed"
 eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/bin/* /usr/local/bin/  
 eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/lib/* /usr/lib/  
 eval ${EX1T}
-} 
+} >> ${LOG_FILE}
 
 clover_ask()	#Install Clover to disk
 {
 clear
-echo "Do you want to install Clover Boot Loader to a disk?
-You can install it to an USB Stick, for example.
+echo "Do you want to install Clover Boot Loader to a USB Stick?
 
 Please write YES or NO"
 read CLOVERANS
@@ -417,62 +442,69 @@ else
 	echo
 	echo
 fi
-CLVDEPS
 eval ${EX1T}
 } 
 
-CLVDEPS()	#Check Clover dependencies
-{
-for i in `seq 11 16`
-do 
-	if ( command -v ${DP[i]} > /dev/null 2>&1 ) || ( pacman -Qi ${DP[i]} > /dev/null 2>&1 ) ; then  
-		echo "${DP[i]} found!"    
-	else
-		echo "${DP[i]} not found, installing package using package manager"  
-    	eval sudo ${PACMAN} ${DP[i]}  
-    	if [ $? -eq 0 ] ; then
-    		echo "${DP[i]} successful instaled"  
-    	else
-    		eval sudo yay -Syyu --noconfirm ${DP[i]}  
-    		if [ $? -eq 0 ] ; then
-    			echo "${DP[i]} successful instaled" 
-    		else
-    			echo "An unknown error occured, please send a report"
-    			exit 1
-    		fi
-    	fi
-	fi
-done
-eval ${EX1T}
-}
-
 LISTDISKS()	#Listing available disks
 {
-THEDISKLIST="$(lsblk -f)"
 clear
-echo "$THEDISKLIST"
-echo
-echo "Listed above, you'll find all available disks at your system.
-It is strongly recommended that you install Clover to a USB Stick intead of at an internal volume.
+echo "Before we proceed, please, make sure that only the target USB Stick is plugged in.
+Remove any other one before continue, the disk will be ERASED in order to install Clover.
 
-Please, look at the list above and type in the target disk, for example, 'sdh'"
+Do you want to proceed? Please write YES or NO"
 read CLOVERDANS
-if [[ ${CLOVERDANS} != "^ " ]] ; then
-	DISK="${CLOVERDANS}"
-	echo "Now, please type in the target partition, for example, 'sdh1'"
+if [[ $CLOVERDANS = YES ]] || [[ $CLOVERDANS = yes ]] ; then
+	THEDISKLIST="$( ls -l /dev/disk/by-id/usb* )" &>> ${LOG_FILE}
+	echo "${THEDISKLIST}"
+	echo
+	echo "Now, please type in the target device, for example, 'sdh'"
 	read CLOVERDANS22
-	if [[ $CLOVERDANS22 != "^ " ]] ; then
-		PARTITION="${CLOVERDANS22}"
+	if [[ ${CLOVERDANS22} != "^ " ]] ; then
+		DISK="${CLOVERDANS22}" &>> ${LOG_FILE}
 	else
 		echo "An unknown error occured, please send a report"
     	exit 1
     fi
-else
-	echo "An unknown error occured, please send a report"
-    exit 1
 fi
 eval ${EX1T}
 } 
+
+dofilesystem()
+{
+echo
+echo "Creating filesystem, please, be patient, this may take a while."
+echo
+eval sudo dd if=/dev/zero of=/dev/${DISK} bs=512 count=1 conv=notrunc &&
+sleep 5
+sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk /dev/${DISK}
+g			# create new GPT partition
+n			# add new partition
+1			# partition number
+			# default - first sector 
++200MiB 	# partition size
+n			# add new partition
+2			# partition number
+			# default - first sector 
+			# default - last sector 
+t			# change partition type
+1			# partition number
+1			# EFI System partition
+t			# change partition type
+2			# partition number
+38			# HFS/HFS+ partition
+x			# extra features
+n			# change partition name
+1			# partition number
+EFI			# EFI partition name
+n			# change partition name
+2			# partition number
+macOS		# macOS partition
+r			# return main menu
+w			# write partition table and exit
+FDISK_CMDS
+sudo mkfs.fat /dev/${DISK}1 -n EFI &&
+sudo mkfs.hfsplus -F 32 /dev/${DISK}2 -v macOS 
+} >> ${LOG_FILE}
 
 cl_uefi_bios()	#Choose between UEFI or Legacy BIOS
 {
@@ -482,8 +514,8 @@ echo "Do you want to install Clover for UEFI or non-UEFI (Legacy BIOS) system?.
 Please write UEFI or BIOS"
 read CLANS
 if [[ $CLANS = UEFI ]] || [[ $CLANS = uefi ]] ; then
-	CLVDEPS
 	LISTDISKS
+	dofilesystem
 	EXTRACL
 	CLUEFI
 else
@@ -496,27 +528,27 @@ eval ${EX1T}
 EXTRACL()	#Download and extract Clover package
 {
 clear
-echo "You are about to install Clover for UEFI boot at /dev/${PARTITION}.
+echo "You are about to install Clover for UEFI boot at /dev/${DISK}1.
 Do you want to proceed?.
 
 Please write YES or NO"
 read UEFIANS
 if [[ $UEFIANS = YES ]] || [[ $UEFIANS = yes ]] ; then
-    eval mkdir ${HOME}/${DEST_PATH}/Clover/
-	eval cd ${HOME}/${DEST_PATH}/Clover/ 
-    wget https://sourceforge.net/projects/cloverefiboot/files/latest/download  
-    eval mv download Clover.zip
-    7z x Clover.zip  
-	eval mkdir ${HOME}/${DEST_PATH}/Clover/Clover.pkg
-	eval mv Clover_*.pkg ${HOME}/${DEST_PATH}/Clover/Clover.pkg/
-	eval cd ${HOME}/${DEST_PATH}/Clover/Clover.pkg/
-	xar -xzf Clover_*.pkg  
-	rm -rf Clover_*.pkg
+    eval mkdir ${HOME}/${DEST_PATH}/Clover/ &>> ${LOG_FILE}
+	eval cd ${HOME}/${DEST_PATH}/Clover/ &>> ${LOG_FILE}
+    wget https://sourceforge.net/projects/cloverefiboot/files/latest/download &>> ${LOG_FILE}
+    eval mv download Clover.zip &>> ${LOG_FILE}
+    7z x Clover.zip &>> ${LOG_FILE}
+	eval mkdir ${HOME}/${DEST_PATH}/Clover/Clover.pkg &>> ${LOG_FILE}
+	eval mv Clover_*.pkg ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ &>> ${LOG_FILE}
+	eval cd ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ &>> ${LOG_FILE}
+	xar -xzf Clover_*.pkg &>> ${LOG_FILE}
+	rm -rf Clover_*.pkg &>> ${LOG_FILE}
 	for i in ${HOME}/${DEST_PATH}/Clover/Clover.pkg/*
 	do
     	eval cd ${i}
-        cat Payload | gzip -c -d | cpio -i  
-        rm -rf Bom PackageInfo Payload Scripts
+        cat Payload | gzip -c -d -q | cpio -i &>> ${LOG_FILE}
+        rm -rf Bom PackageInfo Payload Scripts &>> ${LOG_FILE}
 	done
 else
 	echo "OK, exiting"
@@ -528,23 +560,25 @@ eval ${EX1T}
 
 CLUEFI()	#Installing Clover for UEFI boot
 {
-eval sudo mkdir /run/media/${USER}/CloverEFI/ 
-eval sudo mount -t msdos /dev/${PARTITION} /run/media/${USER}/CloverEFI/  
-eval sudo cp -rfp ${HOME}/${DEST_PATH}/Clover/Clover.pkg/EFIFolder.pkg/EFI/ /run/media/${USER}/CloverEFI/ 
-eval sudo mkdir /run/media/${USER}/CloverEFI/EFI/CLOVER/drivers64UEFI/
-DRVLIST="$(ls ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ | grep "64.UEFI")"
-eval echo ${DRVLIST} >> ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI.txt
-eval mkdir ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI
+eval udisksctl mount -t msdos -b /dev/${DISK}1 &>> ${LOG_FILE}
+eval TARGET="$( mount | grep "/dev/${DISK}1\b" | gawk "{print \$3}" )"
+echo ${TARGET} >> ${LOG_FILE}
+sleep 5
+eval rsync -arv ${HOME}/${DEST_PATH}/Clover/Clover.pkg/EFIFolder.pkg/EFI/ ${HOME}/${DEST_PATH}/Clover/EFI/ &>> ${LOG_FILE}
+DRVLIST="$(ls ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ | grep "64.UEFI")" &>> ${LOG_FILE}
+eval echo ${DRVLIST} >> ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI.txt &>> ${LOG_FILE}
+eval mkdir ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI &>> ${LOG_FILE}
 for i in ${HOME}/${DEST_PATH}/Clover/Clover.pkg/*
 do
    	eval cd ${i}    
-    eval cp -rfp *.efi ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/
+    eval rsync -arv *.efi ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/ &>> ${LOG_FILE}
 done
-eval cd ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/
-eval sudo cp -rfp DataHubDxe-64.efi Fat-64.efi FSInject-64.efi HFSPlus-64.efi /run/media/${USER}/CloverEFI/EFI/CLOVER/drivers64UEFI/ 
-eval sudo cp -rfp OsxFatBinaryDrv-64.efi PartitionDxe-64.efi VBoxExt4.efi /run/media/${USER}/CloverEFI/EFI/CLOVER/drivers64UEFI/
+eval sudo mkdir ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ &>> ${LOG_FILE}
+eval cd ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/ &>> ${LOG_FILE}
+eval rsync -arv DataHubDxe-64.efi Fat-64.efi FSInject-64.efi HFSPlus-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ &>> ${LOG_FILE}
+eval rsync -arv OsxFatBinaryDrv-64.efi PartitionDxe-64.efi VBoxExt4.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ &>> ${LOG_FILE}
 clear
-echo "Only a basic set of EFI drivers were installed, you can find additional divers at the temp_folder
+echo "Only a basic set of EFI drivers were installed, you can find additional divers at the folder
 ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/drivers64UEFI/
 
 Do you want to view a list of available EFI drivers? Please write YES or NO."
@@ -568,14 +602,16 @@ cloudconfig
 
 cloudconfig()	#Open Clover Cloud Configurator
 {
-echo
+clear
 echo "Do you want to create a new config.plist?
 This option will launch Clover Cloud Configurator web app.
+
+PS: After create you config.plist, place it at the folder ${HOME}/${DEST_PATH}/Clover/EFI/.
 
 Please write YES or NO."
 read CLCLOU
 if [[ $CLCLOU = YES ]] || [[ $CLCLOU = yes ]] ; then
-	xdg-open http://cloudclovereditor.altervista.org/cce/index.php
+	xdg-open http://cloudclovereditor.altervista.org/cce/index.php &>> ${LOG_FILE}
 fi
 eval ${EX1T}
 addkexts
@@ -583,41 +619,65 @@ addkexts
 
 addkexts()
 {
-echo
+clear
 echo "Do you want to add a basic set of kexts?
 This option will add Lilu.kext, VirtualSMC.kext and LiluFriend.kext.
 
 Please write YES or NO."
 read KEXTANS
 if [[ $KEXTANS = YES ]] || [[ $KEXTANS = yes ]] ; then
-	eval cp -rf ${DIR}/kexts/LiluFriend.kext/ /run/media/${USER}/CloverEFI/EFI/CLOVER/kexts/Other/
-	eval cp -rf ${DIR}/kexts/Lilu.kext/ /run/media/${USER}/CloverEFI/EFI/CLOVER/kexts/Other/
-	eval cp -rf ${DIR}/kexts/VirtualSMC.kext/ /run/media/${USER}/CloverEFI/EFI/CLOVER/kexts/Other/
+	eval rsync -arvR ${DIR}/kexts/LiluFriend.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
+	eval rsync -arvR ${DIR}/kexts/Lilu.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
+	eval rsync -arvR ${DIR}/kexts/VirtualSMC.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
 	echo "Kexts added!"
+	clvfinish
 else
 	echo "Kexts will not be added."
 fi
 eval ${EX1T}
+clvfinish
+} 
+
+clvfinish()
+{
+clear
+echo "Now, we must move everything to its own place...
+It's almost finished..."
+sleep 3
+echo
+echo
+echo "Finishing tasks..."
+sleep 2
+eval cd ${HOME}/${DEST_PATH}/Clover/EFI/
+find . -type d -exec mkdir -p "$TARGET{}" \; &>> ${LOG_FILE}
+find . -type f -exec dd if={} of="$TARGET{}" bs=8M oflag=direct \; &>> ${LOG_FILE}
+#eval sudo rsync -arvR EFI/ ${TARGET} &>> ${LOG_FILE}
+sleep 1
+eval ${EX1T}
 UNMPART
-}  
+} 
 
 UNMPART()	#Unmounting partition
 {
-echo
-echo "Do you want to unmount $PARTION ?
+clear
+echo "Do you want to unmount $TARGET ?
 
 Please write YES or NO."
 read EXITANS
 if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] ; then
-	eval sudo umount /run/media/${USER}/CloverEFI/  
-	eval sudo rm -rf /run/media/${USER}/CloverEFI/  
+	eval sudo umount "${TARGET}"/ &>> ${LOG_FILE}
+	echo "Clover Boot Loader was successfully installed! Exiting.
+	
+Thank you for using OSX86dotNET Linux4macOS tool!"
 else
-	echo "Clover Boot Loader was successfully installed! Exiting."
+	echo "Clover Boot Loader was successfully installed! Exiting.
+	
+Thank you for using OSX86dotNET Linux4macOS tool!"
 fi
 eval ${EX1T}
 } 
 
-runall()	#Run all tasks
+runall()	#Run all tasks -l
 {
 get_os
 vent
@@ -629,6 +689,8 @@ acpidump
 dev_tool
 applefs
 clover_ask
+echo
+eval xdg-open ${HOME}/${DEST_PATH}/ 
 }
 
 $OPTA
