@@ -282,6 +282,8 @@ if [[ $SISANS = YES ]] || [[ $SISANS = yes ]] ; then
     for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
     tree -F /boot/efi/ > "$HOME/$DEST_PATH/EFI_Info.txt"
     for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
+    efivar -L > "$HOME/$DEST_PATH/EFI_Var.txt"
+    for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
 fi
 eval ${EX1T}
 } 
@@ -809,7 +811,7 @@ mv InstallESD.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/Shared
 mv AppleDiagnostics.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg
 mv AppleDiagnostics.chunklist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist
 eval ${EX1T}
-}
+} >> ${LOG_FILE}
 
 copybasesystem()	#Listing available disks
 {
@@ -832,8 +834,8 @@ if [[ $CPBASEANS = YES ]] || [[ $CPBASEANS = yes ]] ; then
 		domacosimg
 		eval cp -R "${HOME}/${DEST_PATH}/macOS/OS\ X\ Base\ System/*" "/run/media/${USER}/OS\ X\ Base\ System/"
 		sleep 1
-		udisksctl unmount -b /dev/loop0
-		udisksctl loop-delete -b /dev/loop0
+		udisksctl unmount -b /dev/loop0 &>> ${LOG_FILE}
+		udisksctl loop-delete -b /dev/loop0 &>> ${LOG_FILE}
 		sleep 1
 		eval cd ${HOME}/${DEST_PATH}/macOS/
 		clear
