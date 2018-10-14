@@ -5,6 +5,7 @@ Linux4macOS, is a script to help users fix a macOS install from Linux.
 
 This are the current features:
 
+  - Creates a macOS installer.
   - Installs Clover Bootloader to disk for UEFI and Legacy boot.
   - Download and installs a Basic set of kexts (work in progress).
   - Install hfsprogs to access HFS and HFS+ formatted partitions.
@@ -31,6 +32,7 @@ The available options are:
   - -c 				= Install Clover Bootloader to a disk
   - -d 				= Used as direct jump, needs extra argument.
   - -h 				= This help
+  - -i 				= Create a macOS installer
   - -l 				= Run all tasks
   - -v 				= Verbose output"
  
@@ -68,3 +70,7 @@ Clover Team > https://sourceforge.net/projects/cloverefiboot/
 Acidanthera Team > https://github.com/acidanthera
 
 kylon > http://cloudclovereditor.altervista.org/cce/index.php
+
+fusion71au > https://www.insanelymac.com/forum/topic/329828-making-a-bootable-high-sierra-usb-installer-entirely-from-scratch-in-windows-or-linux-mint-without-access-to-mac-or-app-store-installerapp/
+
+PikeRAlpha > https://pikeralpha.wordpress.com/2017/06/06/catalogurl-for-macos-10-13-high-sierra/

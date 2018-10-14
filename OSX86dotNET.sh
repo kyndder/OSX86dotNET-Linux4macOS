@@ -24,8 +24,9 @@ OPTE=""
 EX1T=""
 DISK=""
 TARGET=""
+THEDISKLIST=""
 
-while getopts "h?cavd:l" opt; do
+while getopts "h?cavd:il" opt; do
     case "$opt" in
     h)
         echo "Available options are:
@@ -33,6 +34,7 @@ while getopts "h?cavd:l" opt; do
  -c 		= Install Clover Bootloader to a disk
  -d 		= Used as direct jump, needs extra argument. Use "-?"
  -h 	 	= This help
+ -i 		= Create a macOS installer
  -l 		= Run all tasks
  -v 		= Verbose output"
         exit 0
@@ -59,6 +61,8 @@ while getopts "h?cavd:l" opt; do
 		EX1T="exit 0"
         ;;
     l)  OPTE="runall"
+        ;;
+    i)  OPTI="domacosinstall"
         ;;
     esac
 done
@@ -614,7 +618,7 @@ eval ${EX1T}
 docloverimg() #Create EFI image file
 {
 eval cd ${HOME}/${DEST_PATH}/Clover/
-sudo dd if=/dev/zero of=EFI.img count=199 bs=1M
+sudo dd if=/dev/zero of=EFI.img count=199 bs=1M status=progress
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk EFI.img
 g			# create new GPT partition
 n			# add new partition
@@ -636,12 +640,38 @@ eval sudo mount -t vfat -o loop EFI.img /run/media/${USER}/CloverIMG/ &>> ${LOG_
 sleep 3
 } >> ${LOG_FILE}
 
+domacosimg() #Create EFI image file
+{
+eval cd ${HOME}/${DEST_PATH}/macOS/
+sudo dd if=/dev/zero of=OS\ X\ Base\ System.img count=7000 bs=1M status=progress
+sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk OS\ X\ Base\ System.img
+g			# create new GPT partition
+n			# add new partition
+1			# partition number
+			# default - first sector 
+			# partition size
+t			# change partition type
+38			# HFS/HFS+ partition
+x			# extra features
+n			# change partition name
+macOS		# macOS partition name
+r			# return main menu
+w			# write partition table and exit
+FDISK_CMDS
+sudo mkfs.hfsplus OS\ X\ Base\ System.img -v OS\ X\ Base\ System &>> ${LOG_FILE}
+sleep 3
+eval sudo udisksctl loop-setup -f "OS\ X\ Base\ System.img" &>> ${LOG_FILE}
+sleep 3
+eval udisksctl mount -b /dev/loop0 &>> ${LOG_FILE}
+sleep 3
+} >> ${LOG_FILE}
+
 dofilesystem() #Formatting USB Stick for CLover
 {
 echo
 echo "Creating filesystem, please, be patient, this may take a while."
 echo
-eval sudo dd if=/dev/zero of=/dev/${DISK} bs=512 count=1 conv=notrunc &&
+eval sudo dd if=/dev/zero of=/dev/${DISK} bs=512 count=1 conv=notrunc status=progress
 sleep 5
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk /dev/${DISK}
 g			# create new GPT partition
@@ -694,7 +724,7 @@ eval sudo rm -rf /run/media/${USER}/CloverIMG/ &>> ${LOG_FILE}
 dofilesystem
 sleep 1
 eval cd ${HOME}/${DEST_PATH}/Clover/
-eval sudo dd if=EFI.img of=/dev/${DISK}1 bs=1M &>> ${LOG_FILE}
+eval sudo dd if=EFI.img of=/dev/${DISK}1 bs=1M status=progress
 sleep 1
 eval udisksctl mount -t vfat -b /dev/${DISK}1 &>> ${LOG_FILE}
 eval ${EX1T}
@@ -710,16 +740,121 @@ Please write YES or NO."
 read EXITANS
 if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] ; then
 	eval sudo umount "${TARGET}"/ &>> ${LOG_FILE}
-	echo "Clover Boot Loader was successfully installed! Exiting.
-	
-Thank you for using OSX86dotNET Linux4macOS tool!"
+	echo "Clover Boot Loader was successfully installed!"
 else
-echo "Clover Boot Loader was successfully installed! Exiting.
-	
-Thank you for using OSX86dotNET Linux4macOS tool!"
+	echo "Clover Boot Loader was successfully installed!"
 fi
 eval ${EX1T}
 }
+
+domacosinstall() #macOS installer
+{
+clear
+echo "Do you want to create a macOS High Sierra installer?
+This option will download needed files and create a macOS installer.
+
+Please write YES or NO."
+read MACOSANS
+if [[ $MACOSANS = YES ]] || [[ $MACOSANS = yes ]] ; then
+	eval mkdir ${HOME}/${DEST_PATH}/macOS/
+	eval cd ${HOME}/${DEST_PATH}/macOS/
+	wget http://swcdn.apple.com/content/downloads/49/44/041-08708/vtip954dc6zbkpdv16iw18jmilcqdt8uot/BaseSystem.dmg
+	wget http://swcdn.apple.com/content/downloads/07/20/091-95774/awldiototubemmsbocipx0ic9lj2kcu0pt/BaseSystem.chunklist
+	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/InstallInfo.plist
+	wget http://swcdn.apple.com/content/downloads/00/21/091-76348/67qi57g3fqpytl06cofi6bn2uuughsq2uo/InstallESDDmg.pkg
+	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/AppleDiagnostics.dmg
+	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/AppleDiagnostics.chunklist
+	sleep 1
+	mv InstallESDDmg.pkg InstallESD.dmg
+	mv InstallInfo.plist InstallInfoTempor.plist
+	echo
+	echo
+	echo "Downloads finished!"
+	changeinstallinfo
+	dobasesystem
+	copybasesystem
+else
+	echo "The installer will not be created."
+	exit 0
+fi
+eval ${EX1T}
+}
+
+changeinstallinfo() #Make necessary modifications to InstallInfo.plist
+{
+sed -i -e 's/<key>chunklistURL<\/key>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
+sleep 1
+sed -i -e 's/<string>InstallESDDmg.chunklist<\/string>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
+sleep 1
+sed -i -e 's/<key>chunklistid<\/key>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
+sleep 1
+sed -i -e 's/<string>com.apple.chunklist.InstallESDDmg<\/string>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
+sleep 1
+sed -i -e 's/<string>InstallESDDmg.pkg<\/string>/<string>InstallESD.dmg<\/string>/g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
+sleep 1
+sed -i -e 's/<string>com.apple.pkg.InstallESDDmg<\/string>/<string>com.apple.dmg.InstallESD<\/string>/g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
+sleep 1
+eval ${EX1T}
+} >> ${LOG_FILE}
+
+dobasesystem() #Creates macOS installer
+{
+eval cd ${HOME}/${DEST_PATH}/macOS/
+7z x BaseSystem.dmg
+mkdir OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/
+mv BaseSystem.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.dmg
+mv BaseSystem.chunklist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.chunklist
+mv InstallInfo.plist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist
+mv InstallESD.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg
+mv AppleDiagnostics.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg
+mv AppleDiagnostics.chunklist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist
+eval ${EX1T}
+}
+
+copybasesystem()	#Listing available disks
+{
+clear
+echo "Before we proceed, we must know where to place the files.
+Choose the target partition at your USB Stick, for the macOS installer
+
+The partition must have at least 7Gb free.
+
+Do you want to proceed? Please write YES or NO"
+read CPBASEANS
+if [[ $CPBASEANS = YES ]] || [[ $CPBASEANS = yes ]] ; then
+	THEDISKLIST="$( ls -l /dev/disk/by-id/usb* )" &>> ${LOG_FILE}
+	echo "${THEDISKLIST}"
+	echo
+	echo "Now, please type in the target device, for example, 'sdh2'"
+	read CPBASEANS22
+	if [[ ${CPBASEANS22} != "^ " ]] ; then
+		DISK="${CPBASEANS22}" &>> ${LOG_FILE}
+		domacosimg
+		eval cp -R "${HOME}/${DEST_PATH}/macOS/OS\ X\ Base\ System/*" "/run/media/${USER}/OS\ X\ Base\ System/"
+		sleep 1
+		udisksctl unmount -b /dev/loop0
+		udisksctl loop-delete -b /dev/loop0
+		sleep 1
+		eval cd ${HOME}/${DEST_PATH}/macOS/
+		clear
+		echo "Finishing tasks, this may take some time...
+		
+After finishing copiyng files, it may appear that it hangs, but it is just finishing up."
+		echo
+		eval sudo dd if="OS\ X\ Base\ System.img" of=/dev/${DISK} bs=1M status=progress
+		echo
+		echo "Installer successful created!
+		
+Unplug and replug your USB Stick in order to view the files.
+
+Thank you for using Linux4macOS tool!"
+	else
+		echo "An unknown error occured, please send a report"
+    	exit 1
+    fi
+fi
+eval ${EX1T}
+} 
 
 runall()	#Run all tasks -l
 {
@@ -731,6 +866,7 @@ acpidump
 dev_tool
 applefs
 clover_ask
+domacosinstall
 echo
 eval xdg-open ${HOME}/${DEST_PATH}/ 
 }
@@ -739,3 +875,4 @@ $OPTA
 $OPTC
 $OPTD
 $OPTE
+$OPTI
