@@ -735,12 +735,12 @@ UNMPART
 UNMPART()	#Unmounting partition
 {
 clear
-echo "Do you want to unmount $TARGET ?
+echo "Do you want to unmount ${DISK}1 ?
 
 Please write YES or NO."
 read EXITANS
 if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] ; then
-	eval sudo umount "${TARGET}"/ &>> ${LOG_FILE}
+	eval udisksctl unmount -b /dev/${DISK}1 &>> ${LOG_FILE}
 	echo "Clover Boot Loader was successfully installed!"
 else
 	echo "Clover Boot Loader was successfully installed!"
@@ -807,13 +807,15 @@ sudo dmg2img -v -i BaseSystem.dmg -p 4 -o "${LOOP}"
 sleep 3
 eval udisksctl mount -b "${LOOP}" 
 sleep 3
-sudo mkdir OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/
-sudo mv BaseSystem.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.dmg
-sudo mv BaseSystem.chunklist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.chunklist
-sudo mv InstallInfo.plist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist
-sudo mv InstallESD.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg
-sudo mv AppleDiagnostics.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg
-sudo mv AppleDiagnostics.chunklist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist
+eval TARGET="$( mount | grep "OS\ X\ Base\ System" | gawk "{print \$3, \$4, \$5, \$6}" | sed "s/ /\\ /g" )"
+sleep 1
+eval sudo mkdir ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/
+eval sudo mv BaseSystem.dmg ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.dmg
+eval sudo mv BaseSystem.chunklist ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.chunklist
+eval sudo mv InstallInfo.plist ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist
+eval sudo mv InstallESD.dmg ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg
+eval sudo mv AppleDiagnostics.dmg ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg
+eval sudo mv AppleDiagnostics.chunklist ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist
 eval ${EX1T}
 } >> ${LOG_FILE}
 
