@@ -25,6 +25,7 @@ EX1T=""
 DISK=""
 TARGET=""
 THEDISKLIST=""
+LOOP=""
 
 while getopts "h?cavd:il" opt; do
     case "$opt" in
@@ -645,7 +646,7 @@ sleep 3
 domacosimg() #Create EFI image file
 {
 eval cd ${HOME}/${DEST_PATH}/macOS/
-sudo dd if=/dev/zero of=OS\ X\ Base\ System.img count=7000 bs=1M status=progress
+sudo dd if=/dev/zero of=OS\ X\ Base\ System.img count=7000 bs=1M status=progress &>> ${LOG_FILE}
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk OS\ X\ Base\ System.img
 g			# create new GPT partition
 n			# add new partition
@@ -663,8 +664,6 @@ FDISK_CMDS
 sudo mkfs.hfsplus OS\ X\ Base\ System.img -v OS\ X\ Base\ System &>> ${LOG_FILE}
 sleep 3
 eval sudo udisksctl loop-setup -f "OS\ X\ Base\ System.img" &>> ${LOG_FILE}
-sleep 3
-eval udisksctl mount -b /dev/loop0 &>> ${LOG_FILE}
 sleep 3
 } >> ${LOG_FILE}
 
@@ -752,7 +751,7 @@ eval ${EX1T}
 domacosinstall() #macOS installer
 {
 clear
-echo "Do you want to create a macOS High Sierra installer?
+echo "Do you want to create a macOS Mojave installer?
 This option will download needed files and create a macOS installer.
 
 Please write YES or NO."
@@ -768,7 +767,6 @@ if [[ $MACOSANS = YES ]] || [[ $MACOSANS = yes ]] ; then
 	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/AppleDiagnostics.chunklist
 	sleep 1
 	mv InstallESDDmg.pkg InstallESD.dmg
-	mv InstallInfo.plist InstallInfoTempor.plist
 	echo
 	echo
 	echo "Downloads finished!"
@@ -801,19 +799,25 @@ eval ${EX1T}
 
 dobasesystem() #Creates macOS installer
 {
+domacosimg
 eval cd ${HOME}/${DEST_PATH}/macOS/
-7z x BaseSystem.dmg
-mkdir OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/
-mv BaseSystem.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.dmg
-mv BaseSystem.chunklist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.chunklist
-mv InstallInfo.plist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist
-mv InstallESD.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg
-mv AppleDiagnostics.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg
-mv AppleDiagnostics.chunklist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist
+eval LOOP="$( losetup -l | grep "System.img" | gawk "{print \$1}" )" 
+sleep 1
+sudo dmg2img -v -i BaseSystem.dmg -p 4 -o "${LOOP}"
+sleep 3
+eval udisksctl mount -b "${LOOP}" 
+sleep 3
+sudo mkdir OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/
+sudo mv BaseSystem.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.dmg
+sudo mv BaseSystem.chunklist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.chunklist
+sudo mv InstallInfo.plist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist
+sudo mv InstallESD.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg
+sudo mv AppleDiagnostics.dmg OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg
+sudo mv AppleDiagnostics.chunklist OS\ X\ Base\ System/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist
 eval ${EX1T}
 } >> ${LOG_FILE}
 
-copybasesystem()	#Listing available disks
+copybasesystem()	#Converting image to partition
 {
 clear
 echo "Before we proceed, we must know where to place the files.
@@ -831,20 +835,15 @@ if [[ $CPBASEANS = YES ]] || [[ $CPBASEANS = yes ]] ; then
 	read CPBASEANS22
 	if [[ ${CPBASEANS22} != "^ " ]] ; then
 		DISK="${CPBASEANS22}" &>> ${LOG_FILE}
-		domacosimg
-		eval cp -R "${HOME}/${DEST_PATH}/macOS/OS\ X\ Base\ System/*" "/run/media/${USER}/OS\ X\ Base\ System/"
+		eval udisksctl unmount -b "${LOOP}" &>> ${LOG_FILE}
 		sleep 1
-		udisksctl unmount -b /dev/loop0 &>> ${LOG_FILE}
-		udisksctl loop-delete -b /dev/loop0 &>> ${LOG_FILE}
-		sleep 1
-		eval cd ${HOME}/${DEST_PATH}/macOS/
-		clear
 		echo "Finishing tasks, this may take some time...
 		
 After finishing copiyng files, it may appear that it hangs, but it is just finishing up."
 		echo
-		eval sudo dd if="OS\ X\ Base\ System.img" of=/dev/${DISK} bs=1M status=progress
-		echo
+		eval sudo dd if="${LOOP}" of=/dev/${DISK} bs=1M status=progress
+		sleep 3
+		udisksctl loop-delete -b "${LOOP}" &>> ${LOG_FILE}
 		echo "Installer successful created!
 		
 Unplug and replug your USB Stick in order to view the files.
