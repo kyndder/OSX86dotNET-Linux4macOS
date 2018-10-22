@@ -151,7 +151,7 @@ echo "Unsupported OS, please, send a report."
 exit 1
 esac
 clear
-eval find /home/${USER}/OSX86dotNET/* 
+eval find "/home/${USER}/OSX86dotNET/*" | grep -v "logfile.log"
 if [ $? -eq 0 ] ; then
 	echo
 	echo
@@ -519,7 +519,7 @@ read UEFIANS
 if [[ $UEFIANS = YES ]] || [[ $UEFIANS = yes ]] ; then
     eval mkdir ${HOME}/${DEST_PATH}/Clover/ &>> ${LOG_FILE}
 	eval cd ${HOME}/${DEST_PATH}/Clover/ &>> ${LOG_FILE}
-    wget https://sourceforge.net/projects/cloverefiboot/files/latest/download &>> ${LOG_FILE}
+    wget https://sourceforge.net/projects/cloverefiboot/files/latest/download
     eval mv download Clover.zip &>> ${LOG_FILE}
     7z x Clover.zip &>> ${LOG_FILE}
 	eval mkdir ${HOME}/${DEST_PATH}/Clover/Clover.pkg &>> ${LOG_FILE}
@@ -604,9 +604,9 @@ This option will add Lilu.kext, VirtualSMC.kext and LiluFriend.kext.
 Please write YES or NO."
 read KEXTANS
 if [[ $KEXTANS = YES ]] || [[ $KEXTANS = yes ]] ; then
-	eval cp -R ${DIR}/kexts/ ${HOME}/${DEST_PATH}/Clover/
+	eval cp -R ${DIR}/kexts/ ${HOME}/${DEST_PATH}/Clover/ &>> ${LOG_FILE}
 	eval cd ${HOME}/${DEST_PATH}/Clover/kexts
-	7z x kexts.zip
+	7z x kexts.zip &>> ${LOG_FILE}
 	eval sudo cp -R LiluFriend.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
 	eval sudo cp -R Lilu.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
 	eval sudo cp -R VirtualSMC.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
@@ -622,7 +622,7 @@ docloverimg() #Create EFI image file
 {
 eval cd ${HOME}/${DEST_PATH}/Clover/
 sudo dd if=/dev/zero of=EFI.img count=199 bs=1M status=progress
-sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk EFI.img
+sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk EFI.img &>> ${LOG_FILE}
 g			# create new GPT partition
 n			# add new partition
 1			# partition number
@@ -636,36 +636,43 @@ EFI			# EFI partition name
 r			# return main menu
 w			# write partition table and exit
 FDISK_CMDS
-sudo mkfs.fat -F 32 EFI.img -n EFI
+sudo mkfs.fat -F 32 EFI.img -n EFI &>> ${LOG_FILE}
 sleep 3
 eval sudo mkdir /run/media/${USER}/CloverIMG/ &>> ${LOG_FILE}
 eval sudo mount -t vfat -o loop EFI.img /run/media/${USER}/CloverIMG/ &>> ${LOG_FILE}
 sleep 3
-} >> ${LOG_FILE}
+}
 
 domacosimg() #Create EFI image file
 {
 eval cd ${HOME}/${DEST_PATH}/macOS/
-sudo dd if=/dev/zero of=OS\ X\ Base\ System.img count=7000 bs=1M status=progress &>> ${LOG_FILE}
-sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk OS\ X\ Base\ System.img
-g			# create new GPT partition
-n			# add new partition
-1			# partition number
-			# default - first sector 
-			# partition size
-t			# change partition type
-38			# HFS/HFS+ partition
-x			# extra features
-n			# change partition name
-macOS		# macOS partition name
-r			# return main menu
-w			# write partition table and exit
-FDISK_CMDS
-sudo mkfs.hfsplus OS\ X\ Base\ System.img -v OS\ X\ Base\ System &>> ${LOG_FILE}
-sleep 3
-eval sudo udisksctl loop-setup -f "OS\ X\ Base\ System.img" &>> ${LOG_FILE}
-sleep 3
-} >> ${LOG_FILE}
+sudo dd if=/dev/zero of=OS\ X\ Base\ System.img count=2500 bs=1M status=progress
+#sleep 2
+#sudo parted OS\ X\ Base\ System.img mklabel gpt
+#sleep 1
+#eval sudo udisksctl loop-setup -f "OS\ X\ Base\ System.img"
+#sleep 1
+#eval LOOP="$( losetup -l | grep "System.img" | gawk "{print \$1}" )"
+#sleep 1
+#echo "${LOOP}"
+#sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk "${LOOP}"
+#n			# add new partition
+#1			# partition number
+#			# default - first sector 
+#			# partition size
+#t			# change partition type
+#1			# partition number
+#38			# HFS/HFS+ partition
+#x			# extra features
+#n			# change partition name
+#macOS		# macOS partition name
+#r			# return main menu
+#w			# write partition table and exit
+#FDISK_CMDS
+#sleep 2
+#eval sudo losetup -d "${LOOP}"
+#sleep 1
+}  >> ${LOG_FILE}
 
 dofilesystem() #Formatting USB Stick for CLover
 {
@@ -700,8 +707,8 @@ macOS		# macOS partition
 r			# return main menu
 w			# write partition table and exit
 FDISK_CMDS
-sudo mkfs.fat -F 32 /dev/${DISK}1 -n EFI &&
-sudo mkfs.hfsplus /dev/${DISK}2 -v macOS 
+sudo mkfs.fat -F 32 /dev/${DISK}1 -n EFI &>> ${LOG_FILE}
+sudo mkfs.hfsplus /dev/${DISK}2 -v macOS &>> ${LOG_FILE}
 } >> ${LOG_FILE}
 
 clvfinish() #Writting Clover to EFI partition
@@ -757,21 +764,20 @@ This option will download needed files and create a macOS installer.
 Please write YES or NO."
 read MACOSANS
 if [[ $MACOSANS = YES ]] || [[ $MACOSANS = yes ]] ; then
-	eval mkdir ${HOME}/${DEST_PATH}/macOS/
+	eval mkdir ${HOME}/${DEST_PATH}/macOS/ &>> ${LOG_FILE}
 	eval cd ${HOME}/${DEST_PATH}/macOS/
-	wget http://swcdn.apple.com/content/downloads/49/44/041-08708/vtip954dc6zbkpdv16iw18jmilcqdt8uot/BaseSystem.dmg
-	wget http://swcdn.apple.com/content/downloads/07/20/091-95774/awldiototubemmsbocipx0ic9lj2kcu0pt/BaseSystem.chunklist
-	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/InstallInfo.plist
-	wget http://swcdn.apple.com/content/downloads/00/21/091-76348/67qi57g3fqpytl06cofi6bn2uuughsq2uo/InstallESDDmg.pkg
-	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/AppleDiagnostics.dmg
-	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/AppleDiagnostics.chunklist
+	wget http://swcdn.apple.com/content/downloads/49/44/041-08708/vtip954dc6zbkpdv16iw18jmilcqdt8uot/BaseSystem.dmg 
+	wget http://swcdn.apple.com/content/downloads/07/20/091-95774/awldiototubemmsbocipx0ic9lj2kcu0pt/BaseSystem.chunklist 
+	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/InstallInfo.plist 
+	wget http://swcdn.apple.com/content/downloads/00/21/091-76348/67qi57g3fqpytl06cofi6bn2uuughsq2uo/InstallESDDmg.pkg 
+	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/AppleDiagnostics.dmg 
+	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/AppleDiagnostics.chunklist 
 	sleep 1
-	mv InstallESDDmg.pkg InstallESD.dmg
+	mv InstallESDDmg.pkg InstallESD.dmg &>> ${LOG_FILE}
 	echo
 	echo
 	echo "Downloads finished!"
 	changeinstallinfo
-	dobasesystem
 	copybasesystem
 else
 	echo "The installer will not be created."
@@ -799,23 +805,14 @@ eval ${EX1T}
 
 dobasesystem() #Creates macOS installer
 {
-domacosimg
 eval cd ${HOME}/${DEST_PATH}/macOS/
-eval LOOP="$( losetup -l | grep "System.img" | gawk "{print \$1}" )" 
-sleep 1
-sudo dmg2img -v -i BaseSystem.dmg -p 4 -o "${LOOP}"
-sleep 3
-eval udisksctl mount -b "${LOOP}" 
-sleep 3
-eval TARGET="$( mount | grep "OS\ X\ Base\ System" | gawk "{print \$3, \$4, \$5, \$6}" | sed "s/ /\\ /g" )"
-sleep 1
-eval sudo mkdir ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/
-eval sudo mv BaseSystem.dmg ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.dmg
-eval sudo mv BaseSystem.chunklist ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.chunklist
-eval sudo mv InstallInfo.plist ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist
-eval sudo mv InstallESD.dmg ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg
-eval sudo mv AppleDiagnostics.dmg ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg
-eval sudo mv AppleDiagnostics.chunklist ${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist
+eval sudo mkdir "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/"
+eval sudo mv BaseSystem.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.dmg"
+eval sudo mv BaseSystem.chunklist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.chunklist"
+eval sudo mv InstallInfo.plist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist"
+eval sudo mv InstallESD.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg"
+eval sudo mv AppleDiagnostics.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg"
+eval sudo mv AppleDiagnostics.chunklist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist" 
 eval ${EX1T}
 } >> ${LOG_FILE}
 
@@ -837,15 +834,66 @@ if [[ $CPBASEANS = YES ]] || [[ $CPBASEANS = yes ]] ; then
 	read CPBASEANS22
 	if [[ ${CPBASEANS22} != "^ " ]] ; then
 		DISK="${CPBASEANS22}" &>> ${LOG_FILE}
-		eval udisksctl unmount -b "${LOOP}" &>> ${LOG_FILE}
+		domacosimg
+		eval cd ${HOME}/${DEST_PATH}/macOS/
+		sudo dmg2img -v -i BaseSystem.dmg -p 4 -o OS\ X\ Base\ System.img &>> ${LOG_FILE}
+		sleep 3
+		eval sudo udisksctl loop-setup -f "${HOME}/${DEST_PATH}/macOS/OS\ X\ Base\ System.img" &>> ${LOG_FILE}
+		eval LOOP="$( losetup -l | grep "System.img" | gawk "{print \$1}" )" &>> ${LOG_FILE}
+		if [ -z "$LOOP" ]
+		then
+			echo "\$LOOP is empty"
+			exit 1
+		else
+			echo "\$LOOP is OK continuing..."
+			echo $LOOP
+		fi
+		eval LOOPM="$( echo ${LOOP} | tac | grep -o "l.*" )"
+		if [ -z "$LOOPM" ]
+		then
+			echo "\$LOOPM is empty"
+			exit 1
+		else
+			echo "\$LOOPM is OK continuing..."
+			echo $LOOPM
+		fi
+		eval udisksctl mount -b "${LOOP}" &>> ${LOG_FILE}
 		sleep 1
+		eval sudo mkfs.hfsplus "/dev/${DISK}" -v "OS\ X\ Base\ System" &>> ${LOG_FILE}
+		sleep 3
+		eval udisksctl mount -b "/dev/${DISK}" &>> ${LOG_FILE}
+		sleep 1
+		eval TARGET="$( "$( $( (eval mount | grep "/dev/${DISK}" | gawk "{print \$3, \$4, \$5, \$6}" | sed "s/ /\\ /g" ) ) )" )"
+		if [ -z "$TARGET" ]
+		then
+			echo "\$TARGET is empty"
+			exit 1
+		else
+			echo "\$TARGET is OK continuing..."
+			echo "${TARGET}"
+		fi
+		sleep 1
+		eval LOODIR="$( "$( $( (eval mount | grep "${LOOP}" | gawk "{print \$3, \$4, \$5, \$6}" | sed "s/ /\\ /g" ) ) )" )"
+		if [ -z "$LOODIR" ]
+		then
+			echo "\$LOODIR is empty"
+			exit 1
+		else
+			echo "\$LOODIR is OK continuing..."
+			echo "${LOODIR}"
+		fi
+		sleep 1
+		eval cd "$LOODIR"
+		eval sudo cp -R "$LOODIR"/*.* "$TARGET"/
+		sleep 3
 		echo "Finishing tasks, this may take some time...
 		
 After finishing copiyng files, it may appear that it hangs, but it is just finishing up."
 		echo
-		eval sudo dd if="${LOOP}" of=/dev/${DISK} bs=1M status=progress
+		dobasesystem
 		sleep 3
-		udisksctl loop-delete -b "${LOOP}" &>> ${LOG_FILE}
+		eval udisksctl unmount "${LOOP}" &>> ${LOG_FILE}
+		eval udisksctl loop-delete -b "${LOOP}" &>> ${LOG_FILE}
 		echo "Installer successful created!
 		
 Unplug and replug your USB Stick in order to view the files.
