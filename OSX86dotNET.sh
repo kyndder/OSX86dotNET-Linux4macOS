@@ -607,9 +607,9 @@ if [[ $KEXTANS = YES ]] || [[ $KEXTANS = yes ]] ; then
 	eval cp -R ${DIR}/kexts/ ${HOME}/${DEST_PATH}/Clover/ &>> ${LOG_FILE}
 	eval cd ${HOME}/${DEST_PATH}/Clover/kexts
 	7z x kexts.zip &>> ${LOG_FILE}
-	eval sudo cp -R LiluFriend.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
-	eval sudo cp -R Lilu.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
-	eval sudo cp -R VirtualSMC.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ &>> ${LOG_FILE}
+	eval sudo cp -R LiluFriend.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ | pv -cN
+	eval sudo cp -R Lilu.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ | pv -cN
+	eval sudo cp -R VirtualSMC.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ | pv -cN
 	echo "Kexts added!"
 	clvfinish
 else
@@ -732,7 +732,7 @@ eval sudo rm -rf /run/media/${USER}/CloverIMG/ &>> ${LOG_FILE}
 dofilesystem
 sleep 1
 eval cd ${HOME}/${DEST_PATH}/Clover/
-eval sudo dd if=EFI.img of=/dev/${DISK}1 bs=1M status=progress
+eval sudo dd if=EFI.img | pv | dd of=/dev/${DISK}1 bs=1M
 sleep 1
 eval udisksctl mount -t vfat -b /dev/${DISK}1 &>> ${LOG_FILE}
 eval ${EX1T}
@@ -812,7 +812,7 @@ eval sudo mv BaseSystem.chunklist "${TARGET}/Install\ macOS\ Mojave.app/Contents
 eval sudo mv InstallInfo.plist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist"
 eval sudo mv InstallESD.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg"
 eval sudo mv AppleDiagnostics.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg"
-eval sudo mv AppleDiagnostics.chunklist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist" 
+eval sudo mv AppleDiagnostics.chunklist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist"
 eval ${EX1T}
 } >> ${LOG_FILE}
 
@@ -845,7 +845,7 @@ if [[ $CPBASEANS = YES ]] || [[ $CPBASEANS = yes ]] ; then
 			echo "\$LOOP is empty"
 			exit 1
 		else
-			echo "\$LOOP is OK continuing..."
+			echo "Image OK continuing..."
 			echo $LOOP
 		fi
 		eval LOOPM="$( echo ${LOOP} | tac | grep -o "l.*" )"
@@ -854,7 +854,7 @@ if [[ $CPBASEANS = YES ]] || [[ $CPBASEANS = yes ]] ; then
 			echo "\$LOOPM is empty"
 			exit 1
 		else
-			echo "\$LOOPM is OK continuing..."
+			echo "Image block OK continuing..."
 			echo $LOOPM
 		fi
 		eval udisksctl mount -b "${LOOP}" &>> ${LOG_FILE}
@@ -863,28 +863,29 @@ if [[ $CPBASEANS = YES ]] || [[ $CPBASEANS = yes ]] ; then
 		sleep 3
 		eval udisksctl mount -b "/dev/${DISK}" &>> ${LOG_FILE}
 		sleep 1
-		eval TARGET="$( "$( $( (eval mount | grep "/dev/${DISK}" | gawk "{print \$3, \$4, \$5, \$6}" | sed "s/ /\\ /g" ) ) )" )"
+		eval mount | grep "/dev/${DISK}" | gawk "{print \$3, \$4, \$5, \$6}" | sed "s/ /\\\ /g" > ${HOME}/${DEST_PATH}/macOS/target.txt
+		TARGET="$(cat ${HOME}/${DEST_PATH}/macOS/target.txt)"
 		if [ -z "$TARGET" ]
 		then
 			echo "\$TARGET is empty"
 			exit 1
 		else
-			echo "\$TARGET is OK continuing..."
+			echo "Target partition OK continuing..."
 			echo "${TARGET}"
 		fi
 		sleep 1
-		eval LOODIR="$( "$( $( (eval mount | grep "${LOOP}" | gawk "{print \$3, \$4, \$5, \$6}" | sed "s/ /\\ /g" ) ) )" )"
+		eval mount | grep "${LOOP}" | gawk "{print \$3, \$4, \$5, \$6}" | sed "s/ /\\\ /g" > ${HOME}/${DEST_PATH}/macOS/loopdir.txt
+		LOODIR="$(cat ${HOME}/${DEST_PATH}/macOS/loopdir.txt)"
 		if [ -z "$LOODIR" ]
 		then
 			echo "\$LOODIR is empty"
 			exit 1
 		else
-			echo "\$LOODIR is OK continuing..."
+			echo "Source directory OK continuing..."
 			echo "${LOODIR}"
 		fi
 		sleep 1
-		eval cd "$LOODIR"
-		eval sudo cp -R "$LOODIR"/*.* "$TARGET"/
+		eval sudo cp -R "${LOODIR}"/* "${TARGET}"/
 		sleep 3
 		echo "Finishing tasks, this may take some time...
 		
