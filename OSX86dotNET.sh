@@ -297,9 +297,9 @@ They are necessary to, for example, build packages.
 
 Please write YES or NO"
 read ANSWER
-if [[ $APFSANS = YES ]] || [[ $APFSANS = yes ]] ; then
-	eval sudo ${PACMAN} ${DP[4]} ${DP[5]} >> ${LOG_FILE}
+if [[ $APFSANS = YES ]] || [[ $APFSANS = yes ]] || [[ $APFSANS = Yes ]] ; then
 	if [ $? -eq 0 ] ; then
+		eval sudo ${PACMAN} ${DP[4]} ${DP[5]} >> ${LOG_FILE}
     	echo "Developer tools successfully instaled"
     else
     	echo "An unknown error occured, please send a report"
@@ -385,7 +385,7 @@ It can provide ReadOnly access to APFS formatted Volumes and DMGs.
 
 Please write YES or NO"
 read APFSANS
-if [[ $APFSANS = YES ]] || [[ $APFSANS = yes ]] ; then
+if [[ $APFSANS = YES ]] || [[ $APFSANS = yes ]] || [[ $APFSANS = Yes ]] ; then
 	CHKDEPS
 	GITCLONE
 	APFSMAKE
