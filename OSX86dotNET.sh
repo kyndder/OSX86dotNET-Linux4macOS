@@ -23,9 +23,11 @@ OPTD=""
 OPTE=""
 EX1T=""
 DISK=""
+DISKX=""
 TARGET=""
 THEDISKLIST=""
 LOOP=""
+BOOTDEVICE=""
 
 while getopts "h?cavd:il" opt; do
     case "$opt" in
@@ -138,7 +140,14 @@ do
 		echo Using native package manager!  
 	esac
 done
-} 
+} #>&2>&1 | tee $LOG_FILE
+
+get_boot_device()
+{
+BOOTDEVICE="$( df -P \/ | tail -n 1 | gawk "/.*/ { print \$1 }" | sed "s/[0-9]//g" )"
+echo
+echo "Current boot device is $BOOTDEVICE ."
+}
 
 vent()	#Exit if no known OS
 {
@@ -164,7 +173,7 @@ Please press C for clean or K to keep."
 		eval sudo rm -rf ${HOME}/${DEST_PATH}/*
 	fi
 fi
-}
+} #>&2>&1 | tee $LOG_FILE
 
 hello() #Hello!
 {
@@ -181,7 +190,7 @@ if [[ $WELCANS = YES ]] || [[ $WELCANS = yes ]] || [[ $WELCANS = Yes ]] ; then
 else
 	exit 0
 fi
-}
+} #>&2>&1 | tee $LOG_FILE
 
 verifydeps()	#Verify and install dependencies
 {
@@ -193,7 +202,7 @@ deps
 CHKDEPS
 CLVDEPS
 eval ${EX1T}
-}
+} #>&2>&1 | tee $LOG_FILE
 
 deps()	#Check dependencies
 {
@@ -213,7 +222,7 @@ do
 	fi
 done
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 CHKDEPS()	#Check APFS-Fuse dependencies
 {
@@ -233,7 +242,7 @@ do
 	fi
 done
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 CLVDEPS()	#Check Clover dependencies
 {
@@ -258,7 +267,7 @@ do
 	fi
 done
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 system_dump()	#Dumping system information
 {
@@ -287,7 +296,7 @@ if [[ $SISANS = YES ]] || [[ $SISANS = yes ]] ; then
     for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
 fi
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 dev_tool()	#Check development tools
 {
@@ -312,7 +321,7 @@ else
 	echo
 fi
 eval ${EX1T}
-}  
+} #>&2>&1 | tee $LOG_FILE
 
 acpi_tool()	#Check IASL
 {
@@ -341,7 +350,7 @@ if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] || [[ $ACPIANS = Yes ]] ; then
     fi
 fi
 eval ${EX1T}
-}
+} #>&2>&1 | tee $LOG_FILE
 
 acpidump()	#Dumping ACPI Table
 {
@@ -375,7 +384,7 @@ if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] || [[ $ACPIANS = Yes ]] ; then
     fi
 fi
 eval ${EX1T}
-}
+} #>&2>&1 | tee $LOG_FILE
 
 applefs()	#Check dependencies, compile and install APFS-Fuse drivers
 {
@@ -404,7 +413,7 @@ else
 	echo
 fi
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 GITCLONE()	#Clone APFS-Fuse repository
 {
@@ -419,7 +428,7 @@ eval cd ${HOME}/${DEST_PATH}/apfs-fuse/
 git submodule init
 git submodule update
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 APFSMAKE()	#Compile APFS-Fuse driver
 {
@@ -435,7 +444,7 @@ else
     exit 1
 fi
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 MVDRIVER() #Move APFS-Fuse driver
 {
@@ -446,7 +455,29 @@ your password if needed"
 eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/bin/* /usr/local/bin/  
 eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/lib/* /usr/lib/  
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
+
+dousbstick()	#Prepare a USB Stick to be target of Clover and macOS installer
+{
+clear
+echo "Do you want to create a bootable USB Stick?
+This option will prepare a USB Stick by creating a GPT disk, containing 2 partitions,
+one for Clover, formatted as FAT32 and another for macOS installer, formatted as HFS+. 
+
+Current boot device is $BOOTDEVICE, don't use this device for this function.
+
+Please write YES or NO"
+read USBSTICK
+if [ $USBSTICK == YES ] || [ $USBSTICK == yes ] || [ $USBSTICK == Yes ] ; then
+	LISTEXTDISKS
+	read -p "Press enter to continue"
+else
+    echo "The bootable USB Stick will not be created."
+    echo
+	echo
+fi
+eval ${EX1T}
+} #>&2>&1 | tee $LOG_FILE
 
 clover_ask()	#Install Clover to disk
 {
@@ -464,31 +495,57 @@ else
 	exit 0
 fi
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
-LISTDISKS()	#Listing available disks
+LISTEXTDISKS()	#Listing available disks
 {
 clear
 echo "Before we proceed, please, make sure that only the target USB Stick is plugged in.
-Remove any other one before continue, the disk will be ERASED in order to install Clover.
+Remove any other removable media before continue, the disk will be completely ERASED."
+echo
+echo
+echo
+read -p "Press enter to continue"
+echo
+echo
+lsblk -o name,rm,hotplug,mountpoint | awk -F" " ""\$3\=\=""1"""" | tee ${HOME}/${DEST_PATH}/USB_Stick_List.txt
+echo
+echo
+while true; do
+	echo "Now, please type in the target device, for example, 'sdh'
+Current boot device is $BOOTDEVICE."
+	read -n 3 LISTDISKANS
+	case $LISTDISKANS in
+		" "" "" ") echo "   <--Invalid input! Try again."
+			 echo
+			 echo
+			 continue	;;
 
-Do you want to proceed? Please write YES or NO"
-read CLOVERDANS
-if [[ $CLOVERDANS = YES ]] || [[ $CLOVERDANS = yes ]] || [[ $CLOVERDANS = Yes ]] ; then
-	THEDISKLIST="$( ls -l /dev/disk/by-id/usb* )" 
-	echo "${THEDISKLIST}"
-	echo
-	echo "Now, please type in the target device, for example, 'sdh'"
-	read CLOVERDANS22
-	if [[ ${CLOVERDANS22} != "^ " ]] ; then
-		DISK="${CLOVERDANS22}" 
-	else
-		echo "An unknown error occured, please send a report"
-    	exit 1
-    fi
-fi
+		[1-9][1-9][1-9])	echo "   <--Invalid input! Try again."
+			 echo
+			 echo
+			 continue		;;
+
+		[a-z][a-z][a-z])	eval cat ${HOME}/${DEST_PATH}/USB_Stick_List.txt | grep "$LISTDISKANS" > /dev/null
+							if [ $? != 1 ] ; then 
+								echo "   <--Valid input, continuing."
+								DISK="$LISTDISKANS"
+								echo
+								echo "Target disk is /dev/$DISK"
+								echo
+								dofilesystem
+							else
+								echo "   <--Invalid input! Try again."
+								echo
+								echo
+								continue	
+							fi
+							break
+							;;
+	esac
+done
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 cl_uefi_bios()	#Choose between UEFI or Legacy BIOS
 {
@@ -498,7 +555,6 @@ echo "Do you want to install Clover for UEFI or non-UEFI (Legacy BIOS) system?.
 Please write UEFI or BIOS"
 read CLANS
 if [[ $CLANS = UEFI ]] || [[ $CLANS = uefi ]] ; then
-	LISTDISKS
 	EXTRACL
 	CLUEFI
 else
@@ -506,12 +562,12 @@ else
     exit 0
 fi
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 EXTRACL()	#Download and extract Clover package
 {
 clear
-echo "You are about to install Clover for UEFI boot at /dev/${DISK}1.
+echo "We'll now download and prepare all necessary files.
 Do you want to proceed?.
 
 Please write YES or NO"
@@ -538,7 +594,7 @@ else
     exit 0
 fi
 eval ${EX1T}
-}  
+} #>&2>&1 | tee $LOG_FILE
 
 CLUEFI()	#Installing Clover for UEFI boot
 {
@@ -577,7 +633,7 @@ if [[ $CLUEFIANS90 = YES ]] || [[ $CLUEFIANS90 = yes ]] || [[ $CLUEFIANS90 = Yes
 fi
 eval ${EX1T}
 cloudconfig
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 cloudconfig()	#Open Clover Cloud Configurator
 {
@@ -598,7 +654,7 @@ if [[ $CLCLOU = YES ]] || [[ $CLCLOU = yes ]] || [[ $CLCLOU = Yes ]] ; then
 fi
 eval ${EX1T}
 addkexts
-}
+} #>&2>&1 | tee $LOG_FILE
 
 addkexts() #Adding basic kexts
 {
@@ -621,9 +677,9 @@ else
 	echo "Kexts will not be added."
 fi
 eval ${EX1T}
-}
+} #>&2>&1 | tee $LOG_FILE
 
-docloverimg() #Create EFI image file
+docloverimg() #Create EFI image file #Not in use
 {
 eval cd ${HOME}/${DEST_PATH}/Clover/
 sudo dd if=/dev/zero of=EFI.img count=199 bs=1M status=progress
@@ -646,7 +702,7 @@ sleep 3
 eval sudo mkdir /run/media/${USER}/CloverIMG/ 
 eval sudo mount -t vfat -o loop EFI.img /run/media/${USER}/CloverIMG/ 
 sleep 3
-}
+} #>&2>&1 | tee $LOG_FILE
 
 domacosimg() #Create EFI image file
 {
@@ -677,9 +733,9 @@ sudo dd if=/dev/zero of=OS\ X\ Base\ System.img count=2500 bs=1M status=progress
 #sleep 2
 #eval sudo losetup -d "${LOOP}"
 #sleep 1
-}  
+} #>&2>&1 | tee $LOG_FILE
 
-dofilesystem() #Formatting USB Stick for CLover
+dofilesystem() #Formatting USB Stick for CLover and Installer
 {
 echo
 echo "Creating filesystem, please, be patient, this may take a while."
@@ -714,51 +770,86 @@ w			# write partition table and exit
 FDISK_CMDS
 sudo mkfs.fat -F 32 /dev/${DISK}1 -n EFI 
 sudo mkfs.hfsplus /dev/${DISK}2 -v macOS 
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 clvfinish() #Writting Clover to EFI partition
 {
 clear
-echo "Now, we must move everything to its own place...
-It's almost finished..."
-sleep 3
+lsblk -o name,rm,hotplug,mountpoint | tee ${HOME}/${DEST_PATH}/Clover/Available_Disks_List.txt
 echo
 echo
-echo "Finishing tasks..."
+while true; do
+	echo "Now, please type in the target device for Clover's files, for example, 'sdh1'.
+Be careful, the disk will be formatted as FAT32 and all data on it will be lost!
+
+Current boot device is $BOOTDEVICE."
+	read -n 4 CLLISTDISKANS
+	case $CLLISTDISKANS in
+		" "" "" "" ") echo "   <--Invalid input! Try again."
+			 echo
+			 echo
+			 continue	;;
+
+		[1-9][1-9][1-9][1-9])	echo "   <--Invalid input! Try again."
+			 echo
+			 echo
+			 continue		;;
+
+		[a-z][a-z][a-z][1-9])	eval cat ${HOME}/${DEST_PATH}/Clover/Available_Disks_List.txt | grep "$CLLISTDISKANS" > /dev/null
+							if [ $? != 1 ] ; then 
+								echo "   <--Valid input, continuing."
+								DISKX="$CLLISTDISKANS"
+								echo
+								echo "Target disk is /dev/$DISKX"
+								echo "Formating..."
+								sudo mkfs.fat -F 32 /dev/${DISKX} -n EFI
+							else
+								echo "   <--Invalid input! Try again."
+								echo
+								echo
+								continue	
+							fi
+							break
+							;;
+	esac
+done
 sleep 2
-docloverimg
-sleep 2
-eval cd ${HOME}/${DEST_PATH}/Clover/ 
-eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/EFI/ /run/media/${USER}/CloverIMG/ 
+eval udisksctl mount -b "/dev/${DISKX}"
+sleep1
+eval mount | grep "${DISKX}" | gawk "{print \$3}" | sed "s/ /\\\ /g" > ${HOME}/${DEST_PATH}/Clover/target.txt
+TARGET="$(cat ${HOME}/${DEST_PATH}/Clover/target.txt)"
+if [ -z "$TARGET" ]
+then
+	echo "\$TARGET is empty"
+	exit 1
+else
+	echo "Target partition OK continuing..."
+	echo "${TARGET}"
+fi
 sleep 1
-eval sudo umount /run/media/${USER}/CloverIMG/ 
-sleep 1
-eval sudo rm -rf /run/media/${USER}/CloverIMG/ 
-dofilesystem
-sleep 1
-eval cd ${HOME}/${DEST_PATH}/Clover/
-eval sudo dd if=EFI.img of=/dev/${DISK}1 bs=1M status=progress
-sleep 1
-eval udisksctl mount -t vfat -b /dev/${DISK}1 
+eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/EFI/ "${TARGET}"/ 
+echo 
+echo
+echo "Finished copying files." 
 eval ${EX1T}
 UNMPART
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 UNMPART()	#Unmounting partition
 {
 clear
-echo "Do you want to unmount ${DISK}1 ?
+echo "Do you want to unmount ${DISKX} ?
 
 Please write YES or NO."
 read EXITANS
 if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] || [[ $EXITANS = Yes ]] ; then
-	eval udisksctl unmount -b /dev/${DISK}1 
+	eval udisksctl unmount -b /dev/${DISKX} 
 	echo "Clover Boot Loader was successfully installed!"
 else
 	echo "Clover Boot Loader was successfully installed!"
 fi
 eval ${EX1T}
-}
+} #>&2>&1 | tee $LOG_FILE
 
 domacosinstall() #macOS installer
 {
@@ -789,7 +880,7 @@ else
 	exit 0
 fi
 eval ${EX1T}
-}
+} #>&2>&1 | tee $LOG_FILE
 
 changeinstallinfo() #Make necessary modifications to InstallInfo.plist
 {
@@ -806,7 +897,7 @@ sleep 1
 sed -i -e 's/<string>com.apple.pkg.InstallESDDmg<\/string>/<string>com.apple.dmg.InstallESD<\/string>/g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
 sleep 1
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 dobasesystem() #Creates macOS installer
 {
@@ -818,7 +909,7 @@ eval sudo mv ${HOME}/${DEST_PATH}/macOS/InstallESD.dmg "${TARGET}/Install\ macOS
 eval sudo mv ${HOME}/${DEST_PATH}/macOS/AppleDiagnostics.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg"
 eval sudo mv ${HOME}/${DEST_PATH}/macOS/AppleDiagnostics.chunklist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist"
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 copybasesystem()	#Converting image to partition
 {
@@ -826,15 +917,18 @@ clear
 echo "Before we proceed, we must know where to place the files.
 Choose the target partition at your USB Stick, for the macOS installer
 
-The partition must have at least 7Gb free.
+The partition must have at least 7Gb free
 
 Do you want to proceed? Please write YES or NO"
 read CPBASEANS
 if [[ $CPBASEANS = YES ]] || [[ $CPBASEANS = yes ]] || [[ $CPBASEANS = Yes ]] ; then
-	THEDISKLIST="$( ls -l /dev/disk/by-id/usb* )" 
-	echo "${THEDISKLIST}"
+	eval lsblk -o name,rm,hotplug,mountpoint | tee ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt 
+	eval cat ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt
 	echo
-	echo "Now, please type in the target device, for example, 'sdh2'"
+	echo "Now, please type in the target device, for example, 'sdh2'
+Be careful, the disk will be formatted as HFS+ and all data on it will be lost!
+
+Current boot device is $BOOTDEVICE."
 	read CPBASEANS22
 	if [[ ${CPBASEANS22} != "^ " ]] ; then
 		DISK="${CPBASEANS22}" 
@@ -910,7 +1004,7 @@ Thank you for using Linux4macOS tool!"
     fi
 fi
 eval ${EX1T}
-} 
+} #>&2>&1 | tee $LOG_FILE
 
 runall()	#Run all tasks -l
 {
@@ -921,6 +1015,7 @@ acpi_tool
 acpidump 
 dev_tool
 applefs
+dousbstick
 clover_ask
 domacosinstall
 echo
