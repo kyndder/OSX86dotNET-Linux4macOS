@@ -70,6 +70,8 @@ while getopts "h?cavd:il" opt; do
     esac
 done
 
+printf '\e[8;35;141t'
+
 ${VERBOSE}
 
 eval mkdir -p "$HOME/$DEST_PATH"
@@ -124,6 +126,8 @@ DP[14]="libxml2"
 DP[15]="xarchiver"
 DP[16]="yay"
 DP[17]="xar"
+DP[18]="hfsprogs"
+DP[19]="cpio"
 
 IFS=$'\n'
 
@@ -145,6 +149,11 @@ done
 get_boot_device()
 {
 BOOTDEVICE="$( df -P \/ | tail -n 1 | gawk "/.*/ { print \$1 }" | sed "s/[0-9]//g" )"
+case $BOOTDEVICE in
+	"" )
+		BOOTDEVICE="$( mount | grep "boot" | gawk "{print \$1}" )"
+		;;  
+esac
 echo
 echo "Current boot device is $BOOTDEVICE ."
 }
@@ -164,6 +173,9 @@ eval find "/home/${USER}/OSX86dotNET/*" | grep -v "logfile.log"
 if [ $? -eq 0 ] ; then
 	echo
 	echo
+	printf '\e[?5h'  # Turn on reverse video
+	sleep 0.05
+	printf '\e[?5l'  # Turn on normal video
     echo "There are some files at the $DEST_PATH folder.
 Do you want to cleanup or keep it?
 
@@ -182,10 +194,14 @@ echo "Thank you for using $DEST_PATH Linux4macOS tool!
 In order to provide you a better experience, we need to get some information
 about the OS, to know if it satisfies basic dependencies for this tool. 
 
+Note that if you are running this script from a Live media, a complete system upgrade
+will be performed and it may take a while to complete at first run, please, be patient.
+
 Do you want to proceed? Please, write YES or NO"
 read WELCANS
 if [[ $WELCANS = YES ]] || [[ $WELCANS = yes ]] || [[ $WELCANS = Yes ]] ; then
 	get_os
+	get_boot_device
 	vent
 else
 	exit 0
@@ -246,7 +262,7 @@ eval ${EX1T}
 
 CLVDEPS()	#Check Clover dependencies
 {
-for i in `seq 11 16`
+for i in `seq 11 19`
 do 
 	if ( command -v ${DP[i]} > /dev/null 2>&1 ) || ( pacman -Qi ${DP[i]} > /dev/null 2>&1 ) ; then  
 		echo "${DP[i]} found!"    
@@ -256,7 +272,7 @@ do
     	if [ $? -eq 0 ] ; then
     		echo "${DP[i]} successful instaled"  
     	else
-    		eval sudo yay -Syyu --noconfirm ${DP[i]}  
+    		eval yay -Syyu --noconfirm ${DP[i]}  
     		if [ $? -eq 0 ] ; then
     			echo "${DP[i]} successful instaled" 
     		else
@@ -272,6 +288,9 @@ eval ${EX1T}
 system_dump()	#Dumping system information
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Do you want to make a complete system dump?
 It will get detailed information about your Hardware.
 
@@ -301,19 +320,17 @@ eval ${EX1T}
 dev_tool()	#Check development tools
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Do you want to install development tools?
 They are necessary to, for example, build packages.
 
 Please write YES or NO"
-read ANSWER
+read APFSANS
 if [[ $APFSANS = YES ]] || [[ $APFSANS = yes ]] || [[ $APFSANS = Yes ]] ; then
-	if [ $? -eq 0 ] ; then
-		eval sudo ${PACMAN} ${DP[4]} ${DP[5]}
-    	echo "Developer tools successfully instaled"
-    else
-    	echo "An unknown error occured, please send a report"
-    	exit 1
-    fi
+	eval sudo ${PACMAN} ${DP[4]} ${DP[5]}
+    echo "Developer tools successfully instaled"
 else
     echo "Developer tools will not be installed."
     echo
@@ -326,6 +343,9 @@ eval ${EX1T}
 acpi_tool()	#Check IASL
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Do you want to install ACPI tools?
 They are necessary to retrieve and decompile ACPI table from your system.
 
@@ -355,6 +375,9 @@ eval ${EX1T}
 acpidump()	#Dumping ACPI Table
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Do you want to dump your ACPI table (DSDT, SSDT, etc..)?
 You can use them to make improvements at your OS.
 
@@ -389,6 +412,9 @@ eval ${EX1T}
 applefs()	#Check dependencies, compile and install APFS-Fuse drivers
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Do you want to install OpenSource APFS-Fuse driver?
 It can provide ReadOnly access to APFS formatted Volumes and DMGs.
 
@@ -402,6 +428,7 @@ if [[ $APFSANS = YES ]] || [[ $APFSANS = yes ]] || [[ $APFSANS = Yes ]] ; then
 	if [ $? -eq 0 ] ; then
     	echo "APFS-Fuse successfully compiled and installed!
 For usage and useful informations, please, read the ${HOME}/${DEST_PATH}/apfs-fuse/README.md file."
+		sleep 2
     else
     	echo "An unknown error occured, please send a report"
 	    exit 1
@@ -460,6 +487,9 @@ eval ${EX1T}
 dousbstick()	#Prepare a USB Stick to be target of Clover and macOS installer
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Do you want to create a bootable USB Stick?
 This option will prepare a USB Stick by creating a GPT disk, containing 2 partitions,
 one for Clover, formatted as FAT32 and another for macOS installer, formatted as HFS+. 
@@ -470,6 +500,9 @@ Please write YES or NO"
 read USBSTICK
 if [ $USBSTICK == YES ] || [ $USBSTICK == yes ] || [ $USBSTICK == Yes ] ; then
 	LISTEXTDISKS
+	printf '\e[?5h'  # Turn on reverse video
+	sleep 0.05
+	printf '\e[?5l'  # Turn on normal video
 	read -p "Press enter to continue"
 else
     echo "The bootable USB Stick will not be created."
@@ -482,6 +515,9 @@ eval ${EX1T}
 clover_ask()	#Install Clover to disk
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Do you want to install Clover Boot Loader to a USB Stick?
 
 Please write YES or NO"
@@ -505,6 +541,9 @@ Remove any other removable media before continue, the disk will be completely ER
 echo
 echo
 echo
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 read -p "Press enter to continue"
 echo
 echo
@@ -512,6 +551,9 @@ lsblk -o name,rm,hotplug,mountpoint | awk -F" " ""\$3\=\=""1"""" | tee ${HOME}/$
 echo
 echo
 while true; do
+	printf '\e[?5h'  # Turn on reverse video
+	sleep 0.05
+	printf '\e[?5l'  # Turn on normal video
 	echo "Now, please type in the target device, for example, 'sdh'
 Current boot device is $BOOTDEVICE."
 	read -n 3 LISTDISKANS
@@ -550,6 +592,9 @@ eval ${EX1T}
 cl_uefi_bios()	#Choose between UEFI or Legacy BIOS
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Do you want to install Clover for UEFI or non-UEFI (Legacy BIOS) system?.
 
 Please write UEFI or BIOS"
@@ -567,6 +612,9 @@ eval ${EX1T}
 EXTRACL()	#Download and extract Clover package
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "We'll now download and prepare all necessary files.
 Do you want to proceed?.
 
@@ -577,17 +625,21 @@ if [[ $UEFIANS = YES ]] || [[ $UEFIANS = yes ]] || [[ $UEFIANS = Yes ]] ; then
 	eval cd ${HOME}/${DEST_PATH}/Clover/ 
     wget https://sourceforge.net/projects/cloverefiboot/files/latest/download
     eval mv download Clover.zip 
-    7z x Clover.zip 
-	eval mkdir ${HOME}/${DEST_PATH}/Clover/Clover.pkg 
-	eval mv Clover_*.pkg ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ 
+    eval cd ${HOME}/${DEST_PATH}/Clover/
+    eval 7z x Clover.zip 
+	eval mkdir ${HOME}/${DEST_PATH}/Clover/Clover.pkg
+	eval cd ${HOME}/${DEST_PATH}/Clover/
+	eval mv Clover_*.pkg ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Clover_*.pkg 
+	sleep 1
 	eval cd ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ 
-	xar -xzf Clover_*.pkg 
-	rm -rf Clover_*.pkg 
+	xar -xzf Clover_*.pkg
+	eval rm -rf ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Clover_*.pkg
+	eval rm -rf ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Distribution
 	for i in ${HOME}/${DEST_PATH}/Clover/Clover.pkg/*
 	do
     	eval cd ${i}
-        cat Payload | gzip -c -d -q | cpio -i 2> /dev/null
-        rm -rf Bom PackageInfo Payload Scripts 
+    	eval cat "Payload" | eval gzip -c -d -q | cpio -i
+    	rm -rf Bom PackageInfo Payload Scripts
 	done
 else
 	echo "OK, exiting"
@@ -617,6 +669,9 @@ eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/OsxFatBinaryDrv-64.ef
 eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/PartitionDxe-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/
 eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/VBoxExt4.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Only a basic set of EFI drivers were installed, you can find additional divers at the folder
 ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/drivers64UEFI/
 
@@ -638,6 +693,9 @@ cloudconfig
 cloudconfig()	#Open Clover Cloud Configurator
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Do you want to create a new config.plist?
 This option will launch Clover Cloud Configurator web app.
 
@@ -659,6 +717,9 @@ addkexts
 addkexts() #Adding basic kexts
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Do you want to add a basic set of kexts?
 This option will add Lilu.kext, VirtualSMC.kext and LiluFriend.kext.
 
@@ -779,6 +840,9 @@ lsblk -o name,rm,hotplug,mountpoint | tee ${HOME}/${DEST_PATH}/Clover/Available_
 echo
 echo
 while true; do
+	printf '\e[?5h'  # Turn on reverse video
+	sleep 0.05
+	printf '\e[?5l'  # Turn on normal video
 	echo "Now, please type in the target device for Clover's files, for example, 'sdh1'.
 Be careful, the disk will be formatted as FAT32 and all data on it will be lost!
 
@@ -838,6 +902,9 @@ UNMPART
 UNMPART()	#Unmounting partition
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Do you want to unmount ${DISKX} ?
 
 Please write YES or NO."
@@ -854,6 +921,9 @@ eval ${EX1T}
 domacosinstall() #macOS installer
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Do you want to create a macOS Mojave installer?
 This option will download needed files and create a macOS installer.
 
@@ -914,6 +984,9 @@ eval ${EX1T}
 copybasesystem()	#Converting image to partition
 {
 clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
 echo "Before we proceed, we must know where to place the files.
 Choose the target partition at your USB Stick, for the macOS installer
 
@@ -925,6 +998,9 @@ if [[ $CPBASEANS = YES ]] || [[ $CPBASEANS = yes ]] || [[ $CPBASEANS = Yes ]] ; 
 	eval lsblk -o name,rm,hotplug,mountpoint | tee ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt 
 	eval cat ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt
 	echo
+	printf '\e[?5h'  # Turn on reverse video
+	sleep 0.05
+	printf '\e[?5l'  # Turn on normal video
 	echo "Now, please type in the target device, for example, 'sdh2'
 Be careful, the disk will be formatted as HFS+ and all data on it will be lost!
 
