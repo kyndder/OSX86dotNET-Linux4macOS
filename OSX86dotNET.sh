@@ -128,8 +128,19 @@ DP[16]="yay"
 DP[17]="xar"
 DP[18]="hfsprogs"
 DP[19]="cpio"
+DP[20]="ncurses"
+DP[21]="progress"
 
 IFS=$'\n'
+
+log() 
+{
+if [ -z "$1" ]; then
+	tee -a "$LOG_FILE"
+else
+	printf '%s\n' "$@" | tee -a "$LOG_FILE"
+fi
+}
 
 get_os()	#Check OS
 {
@@ -138,20 +149,20 @@ do
 	grep "${OS[i]}" /etc/os-release > =TMP
 	case $? in
 		0 )
-		OSTYPE="${OS[i]}"  
-		PACMAN="${PKM[i]}"  
+		OSTYPE="${OS[i]}" 
+		PACMAN="${PKM[i]}" 
 		echo Found $OSTYPE !  
 		echo Using native package manager!  
 	esac
 done
-} #>&2>&1 | tee $LOG_FILE
+}
 
 get_boot_device()
 {
-BOOTDEVICE="$( df -P \/ | tail -n 1 | gawk "/.*/ { print \$1 }" | sed "s/[0-9]//g" )"
+BOOTDEVICE="$( df -P \/ | tail -n 1 | gawk "/.*/ { print \$1 }" | sed "s/[0-9]//g" )" 
 case $BOOTDEVICE in
 	"" )
-		BOOTDEVICE="$( mount | grep "boot" | gawk "{print \$1}" )"
+		BOOTDEVICE="$( mount | grep "boot" | gawk "{print \$1}" )" 
 		;;  
 esac
 echo
@@ -185,7 +196,7 @@ Please press C for clean or K to keep."
 		eval sudo rm -rf ${HOME}/${DEST_PATH}/*
 	fi
 fi
-} #>&2>&1 | tee $LOG_FILE
+}
 
 hello() #Hello!
 {
@@ -206,7 +217,7 @@ if [[ $WELCANS = YES ]] || [[ $WELCANS = yes ]] || [[ $WELCANS = Yes ]] ; then
 else
 	exit 0
 fi
-} #>&2>&1 | tee $LOG_FILE
+}
 
 verifydeps()	#Verify and install dependencies
 {
@@ -218,7 +229,7 @@ deps
 CHKDEPS
 CLVDEPS
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+}
 
 deps()	#Check dependencies
 {
@@ -238,7 +249,7 @@ do
 	fi
 done
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+}
 
 CHKDEPS()	#Check APFS-Fuse dependencies
 {
@@ -258,11 +269,11 @@ do
 	fi
 done
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+}
 
 CLVDEPS()	#Check Clover dependencies
 {
-for i in `seq 11 19`
+for i in `seq 11 21`
 do 
 	if ( command -v ${DP[i]} > /dev/null 2>&1 ) || ( pacman -Qi ${DP[i]} > /dev/null 2>&1 ) ; then  
 		echo "${DP[i]} found!"    
@@ -283,7 +294,7 @@ do
 	fi
 done
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 system_dump()	#Dumping system information
 {
@@ -315,7 +326,7 @@ if [[ $SISANS = YES ]] || [[ $SISANS = yes ]] ; then
     for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 dev_tool()	#Check development tools
 {
@@ -329,7 +340,7 @@ They are necessary to, for example, build packages.
 Please write YES or NO"
 read APFSANS
 if [[ $APFSANS = YES ]] || [[ $APFSANS = yes ]] || [[ $APFSANS = Yes ]] ; then
-	eval sudo ${PACMAN} ${DP[4]} ${DP[5]}
+	eval sudo ${PACMAN} ${DP[4]} ${DP[5]} 
     echo "Developer tools successfully instaled"
 else
     echo "Developer tools will not be installed."
@@ -338,7 +349,7 @@ else
 	echo
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 acpi_tool()	#Check IASL
 {
@@ -370,7 +381,7 @@ if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] || [[ $ACPIANS = Yes ]] ; then
     fi
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 acpidump()	#Dumping ACPI Table
 {
@@ -407,7 +418,7 @@ if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] || [[ $ACPIANS = Yes ]] ; then
     fi
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 applefs()	#Check dependencies, compile and install APFS-Fuse drivers
 {
@@ -440,11 +451,11 @@ else
 	echo
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 GITCLONE()	#Clone APFS-Fuse repository
 {
-eval git clone https://github.com/sgan81/apfs-fuse.git ${HOME}/${DEST_PATH}/apfs-fuse/  
+eval git clone https://github.com/sgan81/apfs-fuse.git ${HOME}/${DEST_PATH}/apfs-fuse/ 
 if [ $? -eq 0 ] ; then
    	echo "git clone successful"
 else
@@ -452,10 +463,10 @@ else
     exit 1
 fi
 eval cd ${HOME}/${DEST_PATH}/apfs-fuse/
-git submodule init
-git submodule update
+git submodule init 
+git submodule update 
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+}
 
 APFSMAKE()	#Compile APFS-Fuse driver
 {
@@ -471,7 +482,7 @@ else
     exit 1
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+}
 
 MVDRIVER() #Move APFS-Fuse driver
 {
@@ -482,7 +493,7 @@ your password if needed"
 eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/bin/* /usr/local/bin/  
 eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/lib/* /usr/lib/  
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+}
 
 dousbstick()	#Prepare a USB Stick to be target of Clover and macOS installer
 {
@@ -510,7 +521,7 @@ else
 	echo
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 clover_ask()	#Install Clover to disk
 {
@@ -531,7 +542,7 @@ else
 	exit 0
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 LISTEXTDISKS()	#Listing available disks
 {
@@ -573,7 +584,7 @@ Current boot device is $BOOTDEVICE."
 								echo "   <--Valid input, continuing."
 								DISK="$LISTDISKANS"
 								echo
-								echo "Target disk is /dev/$DISK"
+								echo "Target disk is /dev/$DISK" 
 								echo
 								dofilesystem
 							else
@@ -587,7 +598,7 @@ Current boot device is $BOOTDEVICE."
 	esac
 done
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 cl_uefi_bios()	#Choose between UEFI or Legacy BIOS
 {
@@ -607,7 +618,7 @@ else
     exit 0
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 EXTRACL()	#Download and extract Clover package
 {
@@ -623,30 +634,30 @@ read UEFIANS
 if [[ $UEFIANS = YES ]] || [[ $UEFIANS = yes ]] || [[ $UEFIANS = Yes ]] ; then
     eval mkdir ${HOME}/${DEST_PATH}/Clover/ 
 	eval cd ${HOME}/${DEST_PATH}/Clover/ 
-    wget https://sourceforge.net/projects/cloverefiboot/files/latest/download
+    wget https://sourceforge.net/projects/cloverefiboot/files/latest/download 
     eval mv download Clover.zip 
     eval cd ${HOME}/${DEST_PATH}/Clover/
     eval 7z x Clover.zip 
-	eval mkdir ${HOME}/${DEST_PATH}/Clover/Clover.pkg
-	eval cd ${HOME}/${DEST_PATH}/Clover/
+	eval mkdir ${HOME}/${DEST_PATH}/Clover/Clover.pkg 
+	eval cd ${HOME}/${DEST_PATH}/Clover/ 
 	eval mv Clover_*.pkg ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Clover_*.pkg 
 	sleep 1
 	eval cd ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ 
-	xar -xzf Clover_*.pkg
-	eval rm -rf ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Clover_*.pkg
-	eval rm -rf ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Distribution
+	xar -xzf Clover_*.pkg 
+	eval rm -rf ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Clover_*.pkg 
+	eval rm -rf ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Distribution 
 	for i in ${HOME}/${DEST_PATH}/Clover/Clover.pkg/*
 	do
     	eval cd ${i}
-    	eval cat "Payload" | eval gzip -c -d -q | cpio -i
-    	rm -rf Bom PackageInfo Payload Scripts
+    	eval cat "Payload" | eval gzip -c -d -q | cpio -i 
+    	rm -rf Bom PackageInfo Payload Scripts 
 	done
 else
 	echo "OK, exiting"
     exit 0
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 CLUEFI()	#Installing Clover for UEFI boot
 {
@@ -660,14 +671,14 @@ do
     eval cp -R *.efi ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/ 
 done
 eval sudo mkdir ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ 
-eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/ApfsDriverLoader-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/
-eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/DataHubDxe-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/
-eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/Fat-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/
-eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/FSInject-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/
-eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/HFSPlus-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/
-eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/OsxFatBinaryDrv-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/
-eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/PartitionDxe-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/
-eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/VBoxExt4.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/
+eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/ApfsDriverLoader-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ 
+eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/DataHubDxe-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ 
+eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/Fat-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ 
+eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/FSInject-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ 
+eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/HFSPlus-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ 
+eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/OsxFatBinaryDrv-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ 
+eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/PartitionDxe-64.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ 
+eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/Drivers64-UEFI/VBoxExt4.efi ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/drivers64UEFI/ 
 clear
 printf '\e[?5h'  # Turn on reverse video
 sleep 0.05
@@ -688,7 +699,7 @@ if [[ $CLUEFIANS90 = YES ]] || [[ $CLUEFIANS90 = yes ]] || [[ $CLUEFIANS90 = Yes
 fi
 eval ${EX1T}
 cloudconfig
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 cloudconfig()	#Open Clover Cloud Configurator
 {
@@ -704,7 +715,7 @@ PS: After create your config.plist, save it at the folder ${HOME}/${DEST_PATH}/C
 Please write YES or NO."
 read CLCLOU
 if [[ $CLCLOU = YES ]] || [[ $CLCLOU = yes ]] || [[ $CLCLOU = Yes ]] ; then
-	xdg-open http://cloudclovereditor.altervista.org/cce/index.php
+	xdg-open http://cloudclovereditor.altervista.org/cce/index.php 
 	echo
 	echo
 	echo
@@ -712,7 +723,7 @@ if [[ $CLCLOU = YES ]] || [[ $CLCLOU = yes ]] || [[ $CLCLOU = Yes ]] ; then
 fi
 eval ${EX1T}
 addkexts
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 addkexts() #Adding basic kexts
 {
@@ -729,21 +740,21 @@ if [[ $KEXTANS = YES ]] || [[ $KEXTANS = yes ]] || [[ $KEXTANS = Yes ]] ; then
 	eval cp -R ${DIR}/kexts/ ${HOME}/${DEST_PATH}/Clover/ 
 	eval cd ${HOME}/${DEST_PATH}/Clover/kexts/
 	7z x kexts.zip 
-	eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/kexts/LiluFriend.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ | pv -cN
-	eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/kexts/Lilu.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ | pv -cN
-	eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/kexts/VirtualSMC.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ | pv -cN
+	eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/kexts/LiluFriend.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ 
+	eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/kexts/Lilu.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ 
+	eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/kexts/VirtualSMC.kext/ ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/kexts/Other/ 
 	echo "Kexts added!"
 	clvfinish
 else
 	echo "Kexts will not be added."
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 docloverimg() #Create EFI image file #Not in use
 {
 eval cd ${HOME}/${DEST_PATH}/Clover/
-sudo dd if=/dev/zero of=EFI.img count=199 bs=1M status=progress
+sudo dd if=/dev/zero of=EFI.img count=199 bs=1M status=progress 
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk EFI.img 
 g			# create new GPT partition
 n			# add new partition
@@ -763,12 +774,12 @@ sleep 3
 eval sudo mkdir /run/media/${USER}/CloverIMG/ 
 eval sudo mount -t vfat -o loop EFI.img /run/media/${USER}/CloverIMG/ 
 sleep 3
-} #>&2>&1 | tee $LOG_FILE
+}
 
 domacosimg() #Create EFI image file
 {
 eval cd ${HOME}/${DEST_PATH}/macOS/
-sudo dd if=/dev/zero of=OS\ X\ Base\ System.img count=2500 bs=1M status=progress
+sudo dd if=/dev/zero of=OS\ X\ Base\ System.img count=2500 bs=1M status=progress 
 #sleep 2
 #sudo parted OS\ X\ Base\ System.img mklabel gpt
 #sleep 1
@@ -794,14 +805,14 @@ sudo dd if=/dev/zero of=OS\ X\ Base\ System.img count=2500 bs=1M status=progress
 #sleep 2
 #eval sudo losetup -d "${LOOP}"
 #sleep 1
-} #>&2>&1 | tee $LOG_FILE
+}
 
 dofilesystem() #Formatting USB Stick for CLover and Installer
 {
 echo
 echo "Creating filesystem, please, be patient, this may take a while."
 echo
-eval sudo dd if=/dev/zero of=/dev/${DISK} bs=512 count=1 conv=notrunc status=progress
+eval sudo dd if=/dev/zero of=/dev/${DISK} bs=512 count=1 conv=notrunc status=progress 
 sleep 5
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk /dev/${DISK}
 g			# create new GPT partition
@@ -831,7 +842,7 @@ w			# write partition table and exit
 FDISK_CMDS
 sudo mkfs.fat -F 32 /dev/${DISK}1 -n EFI 
 sudo mkfs.hfsplus /dev/${DISK}2 -v macOS 
-} #>&2>&1 | tee $LOG_FILE
+}
 
 clvfinish() #Writting Clover to EFI partition
 {
@@ -862,11 +873,11 @@ Current boot device is $BOOTDEVICE."
 		[a-z][a-z][a-z][1-9])	eval cat ${HOME}/${DEST_PATH}/Clover/Available_Disks_List.txt | grep "$CLLISTDISKANS" > /dev/null
 							if [ $? != 1 ] ; then 
 								echo "   <--Valid input, continuing."
-								DISKX="$CLLISTDISKANS"
+								DISKX="$CLLISTDISKANS" 
 								echo
-								echo "Target disk is /dev/$DISKX"
+								echo "Target disk is /dev/$DISKX" 
 								echo "Formating..."
-								sudo mkfs.fat -F 32 /dev/${DISKX} -n EFI
+								sudo mkfs.fat -F 32 /dev/${DISKX} -n EFI 
 							else
 								echo "   <--Invalid input! Try again."
 								echo
@@ -878,16 +889,16 @@ Current boot device is $BOOTDEVICE."
 	esac
 done
 sleep 2
-eval udisksctl mount -b "/dev/${DISKX}"
+eval udisksctl mount -b "/dev/${DISKX}" 
 sleep1
 eval mount | grep "${DISKX}" | gawk "{print \$3}" | sed "s/ /\\\ /g" > ${HOME}/${DEST_PATH}/Clover/target.txt
 TARGET="$(cat ${HOME}/${DEST_PATH}/Clover/target.txt)"
 if [ -z "$TARGET" ]
 then
-	echo "\$TARGET is empty"
+	echo "\$TARGET is empty" 
 	exit 1
 else
-	echo "Target partition OK continuing..."
+	echo "Target partition OK continuing..." 
 	echo "${TARGET}"
 fi
 sleep 1
@@ -897,7 +908,7 @@ echo
 echo "Finished copying files." 
 eval ${EX1T}
 UNMPART
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 UNMPART()	#Unmounting partition
 {
@@ -916,7 +927,7 @@ else
 	echo "Clover Boot Loader was successfully installed!"
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 domacosinstall() #macOS installer
 {
@@ -950,36 +961,36 @@ else
 	exit 0
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 changeinstallinfo() #Make necessary modifications to InstallInfo.plist
 {
-sed -i -e 's/<key>chunklistURL<\/key>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
+sed -i -e 's/<key>chunklistURL<\/key>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist 
 sleep 1
-sed -i -e 's/<string>InstallESDDmg.chunklist<\/string>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
+sed -i -e 's/<string>InstallESDDmg.chunklist<\/string>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist 
 sleep 1
-sed -i -e 's/<key>chunklistid<\/key>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
+sed -i -e 's/<key>chunklistid<\/key>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist 
 sleep 1
-sed -i -e 's/<string>com.apple.chunklist.InstallESDDmg<\/string>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
+sed -i -e 's/<string>com.apple.chunklist.InstallESDDmg<\/string>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist 
 sleep 1
-sed -i -e 's/<string>InstallESDDmg.pkg<\/string>/<string>InstallESD.dmg<\/string>/g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
+sed -i -e 's/<string>InstallESDDmg.pkg<\/string>/<string>InstallESD.dmg<\/string>/g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist 
 sleep 1
-sed -i -e 's/<string>com.apple.pkg.InstallESDDmg<\/string>/<string>com.apple.dmg.InstallESD<\/string>/g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist
+sed -i -e 's/<string>com.apple.pkg.InstallESDDmg<\/string>/<string>com.apple.dmg.InstallESD<\/string>/g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist 
 sleep 1
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+}
 
 dobasesystem() #Creates macOS installer
 {
-eval sudo mkdir "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/"
-eval sudo mv ${HOME}/${DEST_PATH}/macOS/BaseSystem.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.dmg"
-eval sudo mv ${HOME}/${DEST_PATH}/macOS/BaseSystem.chunklist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.chunklist"
-eval sudo mv ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist"
-eval sudo mv ${HOME}/${DEST_PATH}/macOS/InstallESD.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg"
-eval sudo mv ${HOME}/${DEST_PATH}/macOS/AppleDiagnostics.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg"
-eval sudo mv ${HOME}/${DEST_PATH}/macOS/AppleDiagnostics.chunklist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist"
+eval sudo mkdir "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/" 
+eval sudo mv ${HOME}/${DEST_PATH}/macOS/BaseSystem.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.dmg" | progress -m \$!
+eval sudo mv ${HOME}/${DEST_PATH}/macOS/BaseSystem.chunklist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.chunklist" | progress -m \$!
+eval sudo mv ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist" | progress -m \$!
+eval sudo mv ${HOME}/${DEST_PATH}/macOS/InstallESD.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg" | progress -m \$!
+eval sudo mv ${HOME}/${DEST_PATH}/macOS/AppleDiagnostics.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg" | progress -m \$!
+eval sudo mv ${HOME}/${DEST_PATH}/macOS/AppleDiagnostics.chunklist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist" | progress -m \$!
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+}
 
 copybasesystem()	#Converting image to partition
 {
@@ -1016,20 +1027,20 @@ Current boot device is $BOOTDEVICE."
 		eval LOOP="$( losetup -l | grep "System.img" | gawk "{print \$1}" )" 
 		if [ -z "$LOOP" ]
 		then
-			echo "\$LOOP is empty"
+			echo "\$LOOP is empty" 
 			exit 1
 		else
-			echo "Image OK continuing..."
-			echo $LOOP
+			echo "Image OK continuing..." 
+			echo $LOOP 
 		fi
 		eval LOOPM="$( echo ${LOOP} | tac | grep -o "l.*" )"
 		if [ -z "$LOOPM" ]
 		then
-			echo "\$LOOPM is empty"
+			echo "\$LOOPM is empty" 
 			exit 1
 		else
-			echo "Image block OK continuing..."
-			echo $LOOPM
+			echo "Image block OK continuing..." 
+			echo $LOOPM 
 		fi
 		eval udisksctl mount -b "${LOOP}" 
 		sleep 1
@@ -1041,10 +1052,10 @@ Current boot device is $BOOTDEVICE."
 		TARGET="$(cat ${HOME}/${DEST_PATH}/macOS/target.txt)"
 		if [ -z "$TARGET" ]
 		then
-			echo "\$TARGET is empty"
+			echo "\$TARGET is empty" 
 			exit 1
 		else
-			echo "Target partition OK continuing..."
+			echo "Target partition OK continuing..." 
 			echo "${TARGET}"
 		fi
 		sleep 1
@@ -1052,14 +1063,14 @@ Current boot device is $BOOTDEVICE."
 		LOODIR="$(cat ${HOME}/${DEST_PATH}/macOS/loopdir.txt)"
 		if [ -z "$LOODIR" ]
 		then
-			echo "\$LOODIR is empty"
+			echo "\$LOODIR is empty" 
 			exit 1
 		else
-			echo "Source directory OK continuing..."
-			echo "${LOODIR}"
+			echo "Source directory OK continuing..." 
+			echo "${LOODIR}" 
 		fi
 		sleep 1
-		eval sudo cp -R "${LOODIR}"/* "${TARGET}"/
+		eval sudo cp -R "${LOODIR}"/* "${TARGET}"/ | progress -m \$!
 		sleep 3
 		echo "Finishing tasks, this may take some time...
 		
@@ -1080,7 +1091,7 @@ Thank you for using Linux4macOS tool!"
     fi
 fi
 eval ${EX1T}
-} #>&2>&1 | tee $LOG_FILE
+} 
 
 runall()	#Run all tasks -l
 {
