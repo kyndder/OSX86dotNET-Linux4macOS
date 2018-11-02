@@ -12,8 +12,6 @@
 #Create working dir
 DEST_PATH="OSX86dotNET"
 
-LOG_FILE="$HOME/$DEST_PATH/logfile.log"
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 TSPACE="5"
@@ -85,6 +83,10 @@ printf '\e[8;35;141t'
 ${VERBOSE}
 
 eval mkdir -p "$HOME/$DEST_PATH"
+
+LOG_FILE="$HOME/$DEST_PATH/logfile.log"
+
+exec > >(tee $LOG_FILE)
 
 #Known OSs
 OS[1]="Arch" #PACMAN
@@ -169,15 +171,6 @@ while [ -d /proc/$PID ]
 do
   printf "\b${sp:i++%${#sp}:1}"
 done
-}
-
-log() 
-{
-if [ -z "$1" ]; then
-	tee -a "$LOG_FILE"
-else
-	printf '%s\n' "$@" | tee -a "$LOG_FILE"
-fi
 }
 
 get_os()	#Check OS
@@ -299,7 +292,7 @@ case $line in
 	Arch )	 echo "$OSTYPE"		 
 	for i in `seq 5 14`
 	do
-		if pacman -Qk ${DP[i]} > /dev/null 2>&1 ; then
+		if pacman -Qk ${DP[i]} > /dev/null 2>&1 || pacman -Qs ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
 		else
 			echo "${DP[i]} not found, installing package using package manager"  
@@ -317,7 +310,7 @@ case $line in
 	Manjaro	)	 echo "$OSTYPE"		 
 	for i in `seq 5 14`
 	do
-		if pacman -Qk ${DP[i]} > /dev/null 2>&1 ; then
+		if pacman -Qk ${DP[i]} > /dev/null 2>&1 || pacman -Qs ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
 		else
 			echo "${DP[i]} not found, installing package using package manager"  
