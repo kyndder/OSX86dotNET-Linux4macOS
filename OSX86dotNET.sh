@@ -629,6 +629,76 @@ eval sudo cp ${HOME}/${DEST_PATH}/apfs-fuse/build/lib/* /usr/lib/
 eval ${EX1T}
 }
 
+mount_apfs_volume()
+{
+eval ${GETOS}
+eval ${GETBOOT}
+eval ${RVENT}
+clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
+echo "Do you want to mount an APFS volume?.
+
+Please write YES or NO"
+read APFSMOUNTANS
+if [[ $APFSMOUNTANS = YES ]] || [[ $APFSMOUNTANS = yes ]] || [[ $APFSMOUNTANS = Yes ]] ; then
+	eval sudo fdisk -l | awk "{print \$1}" | grep "/dev/[a-z][a-z][a-z][0-9]" | sed "s@:@@g" >> ${HOME}/${DEST_PATH}/Block_Device_List.txt
+	cd "$HOME/$DEST_PATH/"
+	echo -e ' '
+	for i in $(cat Block_Device_List.txt) ; do
+    	sudo file -Ls $i | grep APFS 
+    done
+    echo
+    echo
+    while true; do
+	printf '\e[?5h'  # Turn on reverse video
+	sleep 0.05
+	printf '\e[?5l'  # Turn on normal video
+	echo "Now, please type in the target device, for example, 'sdh3'
+	
+Current boot device is $BOOTDEVICE."
+	read -n 4 APFSDISKMOUNT
+	case $APFSDISKMOUNT in
+		" "" "" "" ") echo "   <--Invalid input! Try again."
+			 echo
+			 echo
+			 continue	;;
+
+		[1-9][1-9][1-9][1-9])	echo "   <--Invalid input! Try again."
+			 echo
+			 echo
+			 continue		;;
+
+		[a-z][a-z][a-z][1-9])	eval cat ${HOME}/${DEST_PATH}/Block_Device_List.txt | grep "$APFSDISKMOUNT" > /dev/null
+							if [ $? != 1 ] ; then 
+								echo "   <--Valid input, continuing."
+								echo
+								echo
+								echo "Mounting $APFSDISKMOUNT as APFS volume..."
+								sleep 2
+								eval mkdir ${HOME}/${DEST_PATH}/APFS_Volume
+								eval sudo apfs-fuse "/dev/$APFSDISKMOUNT" "${HOME}/${DEST_PATH}/APFS_Volume/"
+								sleep 2
+								echo "APFS volume mounted..."
+								echo
+								eval xdg-open ${HOME}/${DEST_PATH}/APFS_Volume/ &
+								echo
+								read -p "Press enter to continue"
+							else
+								echo "   <--Invalid input! Try again."
+								echo
+								echo
+								continue	
+							fi
+							break
+							;;
+	esac
+done
+fi
+eval ${EX1T}
+}
+
 dousbstick()	#Prepare a USB Stick to be target of Clover and macOS installer
 {
 eval ${GETOS}
@@ -1274,7 +1344,7 @@ dousbstick
 clover_ask
 domacosinstall
 echo
-eval xdg-open ${HOME}/${DEST_PATH}/ 
+eval xdg-open ${HOME}/${DEST_PATH}/ &
 }
 
 $OPTA
