@@ -6,10 +6,11 @@ Linux4macOS, is a script to help users fix a macOS install from Linux.
 This are the current features:
 
   - Creates a macOS installer.
-  - Installs Clover Bootloader to disk for UEFI and Legacy boot.
-  - Download and installs a Basic set of kexts (work in progress).
+  - Install Clover Bootloader to disk for UEFI and Legacy boot.
+  - Download and install Basic set of kexts (work in progress).
   - Install hfsprogs to access HFS and HFS+ formatted partitions.
   - Compile and Install APFS-Fuse to access APFS formatted partitions.
+  - Mount APFS formatted partitions.
   - Installs basic developments tools.
   - Installs ACPI tools.
   - Extracts and decompile ACPI Tables.
@@ -51,6 +52,7 @@ The available arguments are:
   - applefs				=Compile and install APFS-Fuse drivers "same as -a"
   - clover_ask			=Install Clover to disk "same as -c"
   - dev_tool			=Check and install development tools"
+  - mount_apfs_volume	=Mount an APFS Volume
  
 This is a work in progress, so, suggestions are welcome.
 
