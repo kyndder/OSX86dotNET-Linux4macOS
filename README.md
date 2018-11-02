@@ -15,10 +15,11 @@ This are the current features:
   - Extracts and decompile ACPI Tables.
   - Makes complete system dump.
 
-Currently it has full capabities only at Manjaro Linux but, the script
+Currently it has full capabities Manjaro and Ubuntu but, the script
 was made with the intention of make it compatible to others distros.
 
 You can download Manjaro Linux from here > https://manjaro.org/get-manjaro/
+You can download Ubuntu Linux from here > https://www.ubuntu.com/download/desktop
 
 The usage is simple, clone or download it, go to its directory and run;
 
