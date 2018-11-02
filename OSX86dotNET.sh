@@ -1340,6 +1340,7 @@ verifydeps
 system_dump
 acpidump 
 applefs
+mount_apfs_volume
 dousbstick
 clover_ask
 domacosinstall

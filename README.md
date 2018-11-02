@@ -20,6 +20,7 @@ Currently it has full capabities Manjaro and Ubuntu but, the script
 was made with the intention of make it compatible to others distros.
 
 You can download Manjaro Linux from here > https://manjaro.org/get-manjaro/
+
 You can download Ubuntu Linux from here > https://www.ubuntu.com/download/desktop
 
 The usage is simple, clone or download it, go to its directory and run;
