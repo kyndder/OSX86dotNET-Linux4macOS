@@ -16,6 +16,8 @@ LOG_FILE="$HOME/$DEST_PATH/logfile.log"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
+TSPACE="5"
+
 VERBOSE=""
 OPTA=""
 OPTC=""
@@ -28,6 +30,8 @@ TARGET=""
 THEDISKLIST=""
 LOOP=""
 BOOTDEVICE=""
+FSPACE=""
+OSTYPE=""
 
 while getopts "h?cavd:il" opt; do
     case "$opt" in
@@ -59,9 +63,15 @@ while getopts "h?cavd:il" opt; do
         ;;
     d)  EX1T="exit 0"
 		OPTD="$OPTARG"
+		GETOS="get_os"
+		GETBOOT="get_boot_device"
+		RVENT="vent"
         ;;
     :)  OPTD="$OPTARG"
 		EX1T="exit 0"
+		GETOS="get_os"
+		GETBOOT="get_boot_device"
+		RVENT="vent"
         ;;
     l)  OPTE="runall"
         ;;
@@ -105,33 +115,61 @@ PKM[10]="emerge --pretend" #Gentoo
 PM=""
 
 #Dependencies
-DP2=""
+DP[0]="awk"
 DP[1]="pv"
 DP[2]="tree"
 DP[3]="inxi"
-#Developer utilities
-DP[4]="base-devel"
-DP[5]="devtools"
-#APFS-Fuse dependencies
-DP[6]="fuse-common"
-DP[7]="icu"
-DP[8]="zlib"
-DP[9]="lib32-zlib"
-DP[10]="bzip2"
+DP[4]="git"
+#Arch
+DP[5]="base-devel"
+DP[6]="devtools"
+DP[7]="fuse-common"
+DP[8]="icu"
+DP[9]="zlib"
+DP[10]="lib32-zlib"
+DP[11]="ncurses"
+DP[12]="acpica"
+DP[13]="bzip2"
+DP[14]="yay"
 #Clover
-DP[11]="7z"
-DP[12]="curl"
-DP[13]="gzip"
-DP[14]="libxml2"
-DP[15]="xarchiver"
-DP[16]="yay"
-DP[17]="xar"
-DP[18]="hfsprogs"
-DP[19]="cpio"
-DP[20]="ncurses"
-DP[21]="progress"
+DP[15]="7z"
+DP[16]="curl"
+DP[17]="gzip"
+DP[18]="libxml2"
+DP[19]="xarchiver"
+DP[20]="xar"
+DP[21]="hfsprogs"
+DP[22]="cpio"
+DP[23]="progress"
+DP[24]="dmg2img"
+DP[25]="hfsutils"
+#Debian
+DP[26]="fuse-emulator-common"
+DP[27]="icu-devtools"
+DP[28]="zlib1g-dev"
+DP[29]="zlib1g"
+DP[30]="ncurses-base"
+DP[31]="ncurses-dev"
+DP[32]="acpica-tools"
+DP[33]="build-essential"
+DP[34]="libxml2-dev"
+DP[35]="libssl1.0-dev"
+DP[36]="libbz2-dev"
+DP[37]="libfuse-dev"
 
 IFS=$'\n'
+
+do_spin()
+{
+PID=$!
+i=1
+sp="/-\|"
+echo -n "Copying, please wait... " ""
+while [ -d /proc/$PID ]
+do
+  printf "\b${sp:i++%${#sp}:1}"
+done
+}
 
 log() 
 {
@@ -159,10 +197,10 @@ done
 
 get_boot_device()
 {
-BOOTDEVICE="$( df -P \/ | tail -n 1 | gawk "/.*/ { print \$1 }" | sed "s/[0-9]//g" )" 
+BOOTDEVICE="$( df -H -P \/ | tail -n 1 | awk "/.*/ { print \$1 }" | sed "s/[0-9]//g" )" 
 case $BOOTDEVICE in
 	"" )
-		BOOTDEVICE="$( mount | grep "boot" | gawk "{print \$1}" )" 
+		BOOTDEVICE="$( mount | grep "boot" | awk "{print \$1}" )" 
 		;;  
 esac
 echo
@@ -171,8 +209,8 @@ echo "Current boot device is $BOOTDEVICE ."
 
 vent()	#Exit if no known OS
 {
+FSPACE="$( df -H -P \/ | tail -n 1 | awk "{print \$4}" | sed "s/[a-z A-Z]//g" )"		#Check free space
 echo "$OSTYPE" | grep ""
-
 case "$OSTYPE" in
 '')
 cat /etc/os-release | echo "${NAME}"  
@@ -221,6 +259,9 @@ fi
 
 verifydeps()	#Verify and install dependencies
 {
+eval ${GETOS}
+eval ${GETBOOT}
+eval ${RVENT}
 clear
 echo "Before we start, we must check some dependencies and install it, if needed.
 You can check later, all that is done by this script at the ${LOG_FILE}"
@@ -228,12 +269,13 @@ sleep 5
 deps
 CHKDEPS
 CLVDEPS
+#acpi_tool
 eval ${EX1T}
 }
 
 deps()	#Check dependencies
 {
-for i in `seq 1 3`
+for i in `seq 0 4`
 do
 	if command -v ${DP[i]} > /dev/null 2>&1 ; then 
 		echo "${DP[i]} found!"  
@@ -244,38 +286,178 @@ do
     		echo "${DP[i]} successful instaled"  
     	else
     		echo "An unknown error occured, please send a report"
-    		exit 1
+			exit 1
     	fi
 	fi
 done
-eval ${EX1T}
 }
 
-CHKDEPS()	#Check APFS-Fuse dependencies
+CHKDEPS()	#Check dependencies by OS
 {
-for i in `seq 6 10`
-do
-	if pacman -Qk ${DP[i]} > /dev/null 2>&1 ; then
-		echo "${DP[i]} found!"  
-	else
-		echo "${DP[i]} not found, installing package using package manager"  
-	    eval sudo ${PACMAN} ${DP[i]} 
-	    if [ $? -eq 0 ] ; then
-	    	echo "${DP[i]} successful instaled"  
-	    else
-	    	echo "An unknown error occured, please send a report"
-	    	exit 1
-	    fi
-	fi
+echo "${OSTYPE}" | while IFS= read -r line ; do
+case $line in
+	Arch )	 echo "$OSTYPE"		 
+	for i in `seq 5 14`
+	do
+		if pacman -Qk ${DP[i]} > /dev/null 2>&1 ; then
+			echo "${DP[i]} found!"  
+		else
+			echo "${DP[i]} not found, installing package using package manager"  
+			eval sudo ${PACMAN} ${DP[i]} 
+			if [ $? -eq 0 ] ; then
+				echo "${DP[i]} successful instaled"  
+			else
+				echo "An unknown error occured, please send a report"
+				exit 1
+			fi
+		fi
+	done
+	break	
+	;;
+	Manjaro	)	 echo "$OSTYPE"		 
+	for i in `seq 5 14`
+	do
+		if pacman -Qk ${DP[i]} > /dev/null 2>&1 ; then
+			echo "${DP[i]} found!"  
+		else
+			echo "${DP[i]} not found, installing package using package manager"  
+			eval sudo ${PACMAN} ${DP[i]} 
+			if [ $? -eq 0 ] ; then
+				echo "${DP[i]} successful instaled"  
+			else
+				echo "An unknown error occured, please send a report"
+				exit 1
+			fi
+		fi
+	done
+	break	
+	;;
+	Debian ) 	echo "$OSTYPE"
+	for i in `seq 26 37`
+	do
+		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
+			echo "${DP[i]} found!"  
+		else
+			echo "${DP[i]} not found, installing package using package manager"  
+			eval sudo ${PACMAN} ${DP[i]} 
+			if [ $? -eq 0 ] ; then
+				echo "${DP[i]} successful instaled"  
+			else
+				echo "An unknown error occured, please send a report"
+				exit 1
+			fi
+		fi
+	done
+	build_xar
+	build_cmake
+	break
+	;;
+	Ubuntu ) 	echo "$OSTYPE"
+	for i in `seq 26 37`
+	do
+		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
+			echo "${DP[i]} found!"  
+		else
+			echo "${DP[i]} not found, installing package using package manager"  
+			eval sudo ${PACMAN} ${DP[i]} 
+			if [ $? -eq 0 ] ; then
+				echo "${DP[i]} successful instaled"  
+			else
+				echo "An unknown error occured, please send a report"
+				exit 1
+			fi
+		fi
+	done
+	build_xar
+	build_cmake
+	break
+	;;
+	Mint ) 	echo "$OSTYPE"
+	for i in `seq 26 37`
+	do
+		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
+			echo "${DP[i]} found!"  
+		else
+			echo "${DP[i]} not found, installing package using package manager"  
+			eval sudo ${PACMAN} ${DP[i]} 
+			if [ $? -eq 0 ] ; then
+				echo "${DP[i]} successful instaled"  
+			else
+				echo "An unknown error occured, please send a report"
+				exit 1
+			fi
+		fi
+	done
+	build_xar
+	build_cmake
+	break
+	;;
+esac
 done
-eval ${EX1T}
+}
+build_xar()		#Building xar for Deb
+{
+if ( command -v xar > /dev/null 2>&1 ) ; then  
+	echo "xar found!"
+else
+	echo 
+	echo
+	echo "Building xar archiver for .pkg extraction"
+	echo
+	echo
+	eval mkdir ${HOME}/${DEST_PATH}/xar
+	eval cd ${HOME}/${DEST_PATH}/xar/
+	wget https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/xar/xar-1.5.2.tar.gz
+	tar -zxvf xar-1.5.2.tar.gz
+	eval cd ${HOME}/${DEST_PATH}/xar/xar-1.5.2/
+	./configure
+	make
+	sudo make install
+	if [ $? == 0 ] ; then
+		echo "xar archiver built successfuly!"
+	else	
+		echo "There were errors building xar.
+	
+It's impossible to create a macOS installer without this tool, please, send a report."
+		read -p "Press enter to continue"
+	fi
+fi
+}
+
+build_cmake()		#Building Cmake for Deb
+{
+if ( command -v cmake > /dev/null 2>&1 ) ; then  
+	echo "cmake found!"
+else
+	echo 
+	echo
+	echo "Building cmake builder."
+	echo
+	echo
+	eval mkdir ${HOME}/${DEST_PATH}/cmake
+	eval cd ${HOME}/${DEST_PATH}/cmake/
+	wget https://cmake.org/files/v3.13/cmake-3.13.0-rc2.tar.gz
+	tar -zxvf cmake-3.13.0-rc2.tar.gz
+	eval cd ${HOME}/${DEST_PATH}/cmake/cmake-3.13.0-rc2/
+	./configure
+	make
+	sudo make install
+	if [ $? == 0 ] ; then
+		echo "cmake builder built successfuly!"
+	else	
+		echo "There were errors building cmake.
+	
+It's impossible to install APFS driver without this tool, please, send a report."
+		read -p "Press enter to continue"
+	fi
+fi
 }
 
 CLVDEPS()	#Check Clover dependencies
 {
-for i in `seq 11 21`
+for i in `seq 15 25`
 do 
-	if ( command -v ${DP[i]} > /dev/null 2>&1 ) || ( pacman -Qi ${DP[i]} > /dev/null 2>&1 ) ; then  
+	if ( command -v ${DP[i]} > /dev/null 2>&1 ) || ( pacman -Qi ${DP[i]} > /dev/null 2>&1 ) || ( dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ) ; then  
 		echo "${DP[i]} found!"    
 	else
 		echo "${DP[i]} not found, installing package using package manager"  
@@ -287,17 +469,19 @@ do
     		if [ $? -eq 0 ] ; then
     			echo "${DP[i]} successful instaled" 
     		else
-    			echo "An unknown error occured, please send a report"
-    			exit 1
+    			echo "An unknown error occured, please send a report
+${DP[i]}"				
     		fi
     	fi
 	fi
 done
-eval ${EX1T}
 } 
 
 system_dump()	#Dumping system information
 {
+eval ${GETOS}
+eval ${GETBOOT}
+eval ${RVENT}
 clear
 printf '\e[?5h'  # Turn on reverse video
 sleep 0.05
@@ -308,91 +492,46 @@ It will get detailed information about your Hardware.
 Please, write YES or NO"
 read SISANS
 if [[ $SISANS = YES ]] || [[ $SISANS = yes ]] ; then
-	dmesg > "$HOME/$DEST_PATH/dmesg.txt"
-    for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
-    sudo lscpu > "$HOME/$DEST_PATH/CPU_Information.txt"
-    for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
-    inxi -Fx > "$HOME/$DEST_PATH/System_Information.txt"
-    for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
-    lspci -nn -k >> "$HOME/$DEST_PATH/System_Information.txt"
-    for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
-    sudo fdisk -l > "$HOME/$DEST_PATH/Disk_Information.txt"
-    for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
-    sudo lshw -short > "$HOME/$DEST_PATH/Hardware_Sumary.txt"
-    for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
-    tree -F /boot/efi/ > "$HOME/$DEST_PATH/EFI_Info.txt"
-    for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
-    efivar -L > "$HOME/$DEST_PATH/EFI_Var.txt"
-    for i in {1..10}; do sleep 0;  done | pv -pWs10 >/dev/null
+	mkdir "$HOME/$DEST_PATH/Dumps"
+	dmesg > "$HOME/$DEST_PATH/Dumps/dmesg.txt"
+    sudo lscpu > "$HOME/$DEST_PATH/Dumps/CPU_Information.txt"
+    inxi -Fx > "$HOME/$DEST_PATH/Dumps/System_Information.txt"
+    lspci -nn -k >> "$HOME/$DEST_PATH/Dumps/System_Information.txt"
+    sudo fdisk -l > "$HOME/$DEST_PATH/Dumps/Disk_Information.txt"
+    sudo lshw -short > "$HOME/$DEST_PATH/Dumps/Hardware_Sumary.txt"
+    tree -F /boot/efi/ > "$HOME/$DEST_PATH/Dumps/EFI_Info.txt"
+    efivar -L > "$HOME/$DEST_PATH/Dumps/EFI_Var.txt"
 fi
 eval ${EX1T}
 } 
 
-dev_tool()	#Check development tools
-{
-clear
-printf '\e[?5h'  # Turn on reverse video
-sleep 0.05
-printf '\e[?5l'  # Turn on normal video
-echo "Do you want to install development tools?
-They are necessary to, for example, build packages.
-
-Please write YES or NO"
-read APFSANS
-if [[ $APFSANS = YES ]] || [[ $APFSANS = yes ]] || [[ $APFSANS = Yes ]] ; then
-	eval sudo ${PACMAN} ${DP[4]} ${DP[5]} 
-    echo "Developer tools successfully instaled"
-else
-    echo "Developer tools will not be installed."
-    echo
-	echo
-	echo
-fi
-eval ${EX1T}
-} 
-
-acpi_tool()	#Check IASL
-{
-clear
-printf '\e[?5h'  # Turn on reverse video
-sleep 0.05
-printf '\e[?5l'  # Turn on normal video
-echo "Do you want to install ACPI tools?
-They are necessary to retrieve and decompile ACPI table from your system.
-
-Please write YES or NO"
-read ACPIANS
-if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] || [[ $ACPIANS = Yes ]] ; then
-	if command -v iasl > /dev/null 2>&1 ; then 
-		DP2="iasl" 
-		eval echo "${DP2} found! You already have ACPI tools installed at your system." 
-		echo
-		echo
-	else
-		DP2="acpica" 
-		echo "ACPI tools not found, installing package using package manager" 
-    	eval sudo ${PACMAN} $DP2 
-    	if [ $? -eq 0 ] ; then
-    		echo "ACPI tools successful instaled" 
-    	else
-    		echo "An unknown error occured, please send a report" 
-    		exit 1
-    	fi
-    fi
-fi
-eval ${EX1T}
-} 
+#acpi_tool()	#Check IASL
+#{
+#if ( command -v iasl > /dev/null 2>&1 ) ; then
+#		echo "ACPI tools found!"  
+#	else
+#		echo "ACPI tools not found, installing package using package manager"  
+#	    eval sudo ${PACMAN} $DP2 
+#	    if [ $? -eq 0 ] ; then
+#    	echo "ACPI tools successful instaled"  
+#    else
+#    	echo "An unknown error occured, please send a report"
+#    	exit 1
+#    fi
+#fi
+#} 
 
 acpidump()	#Dumping ACPI Table
 {
+eval ${GETOS}
+eval ${GETBOOT}
+eval ${RVENT}
 clear
 printf '\e[?5h'  # Turn on reverse video
 sleep 0.05
 printf '\e[?5l'  # Turn on normal video
 echo "Do you want to dump your ACPI table (DSDT, SSDT, etc..)?
 You can use them to make improvements at your OS.
-
-ATTENTION! ACPI tools are needed in order to make dumps.
 
 Please write YES or NO"
 read ACPIANS
@@ -422,6 +561,9 @@ eval ${EX1T}
 
 applefs()	#Check dependencies, compile and install APFS-Fuse drivers
 {
+eval ${GETOS}
+eval ${GETBOOT}
+eval ${RVENT}
 clear
 printf '\e[?5h'  # Turn on reverse video
 sleep 0.05
@@ -432,7 +574,6 @@ It can provide ReadOnly access to APFS formatted Volumes and DMGs.
 Please write YES or NO"
 read APFSANS
 if [[ $APFSANS = YES ]] || [[ $APFSANS = yes ]] || [[ $APFSANS = Yes ]] ; then
-	CHKDEPS
 	GITCLONE
 	APFSMAKE
 	MVDRIVER
@@ -497,6 +638,9 @@ eval ${EX1T}
 
 dousbstick()	#Prepare a USB Stick to be target of Clover and macOS installer
 {
+eval ${GETOS}
+eval ${GETBOOT}
+eval ${RVENT}
 clear
 printf '\e[?5h'  # Turn on reverse video
 sleep 0.05
@@ -511,10 +655,6 @@ Please write YES or NO"
 read USBSTICK
 if [ $USBSTICK == YES ] || [ $USBSTICK == yes ] || [ $USBSTICK == Yes ] ; then
 	LISTEXTDISKS
-	printf '\e[?5h'  # Turn on reverse video
-	sleep 0.05
-	printf '\e[?5l'  # Turn on normal video
-	read -p "Press enter to continue"
 else
     echo "The bootable USB Stick will not be created."
     echo
@@ -525,6 +665,9 @@ eval ${EX1T}
 
 clover_ask()	#Install Clover to disk
 {
+eval ${GETOS}
+eval ${GETBOOT}
+eval ${RVENT}
 clear
 printf '\e[?5h'  # Turn on reverse video
 sleep 0.05
@@ -539,7 +682,6 @@ else
     echo "Clover Bootloader will not be installed."
     echo
 	echo
-	exit 0
 fi
 eval ${EX1T}
 } 
@@ -582,6 +724,11 @@ Current boot device is $BOOTDEVICE."
 		[a-z][a-z][a-z])	eval cat ${HOME}/${DEST_PATH}/USB_Stick_List.txt | grep "$LISTDISKANS" > /dev/null
 							if [ $? != 1 ] ; then 
 								echo "   <--Valid input, continuing."
+								echo
+								echo
+								echo "Are you sure? Please check carefully and press ENTER to continue or CTRL+C to abort!"
+								read -p "Press enter to continue"
+								echo
 								DISK="$LISTDISKANS"
 								echo
 								echo "Target disk is /dev/$DISK" 
@@ -597,7 +744,6 @@ Current boot device is $BOOTDEVICE."
 							;;
 	esac
 done
-eval ${EX1T}
 } 
 
 cl_uefi_bios()	#Choose between UEFI or Legacy BIOS
@@ -617,7 +763,6 @@ else
     echo "Working on it, please, if you want to try UEFI run 'OSX86dotNET.sh -c'" #This will be Legacy BIOS section
     exit 0
 fi
-eval ${EX1T}
 } 
 
 EXTRACL()	#Download and extract Clover package
@@ -626,37 +771,31 @@ clear
 printf '\e[?5h'  # Turn on reverse video
 sleep 0.05
 printf '\e[?5l'  # Turn on normal video
-echo "We'll now download and prepare all necessary files.
-Do you want to proceed?.
-
-Please write YES or NO"
-read UEFIANS
-if [[ $UEFIANS = YES ]] || [[ $UEFIANS = yes ]] || [[ $UEFIANS = Yes ]] ; then
-    eval mkdir ${HOME}/${DEST_PATH}/Clover/ 
-	eval cd ${HOME}/${DEST_PATH}/Clover/ 
-    wget https://sourceforge.net/projects/cloverefiboot/files/latest/download 
-    eval mv download Clover.zip 
-    eval cd ${HOME}/${DEST_PATH}/Clover/
-    eval 7z x Clover.zip 
-	eval mkdir ${HOME}/${DEST_PATH}/Clover/Clover.pkg 
-	eval cd ${HOME}/${DEST_PATH}/Clover/ 
-	eval mv Clover_*.pkg ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Clover_*.pkg 
-	sleep 1
-	eval cd ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ 
-	xar -xzf Clover_*.pkg 
-	eval rm -rf ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Clover_*.pkg 
-	eval rm -rf ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Distribution 
-	for i in ${HOME}/${DEST_PATH}/Clover/Clover.pkg/*
-	do
-    	eval cd ${i}
-    	eval cat "Payload" | eval gzip -c -d -q | cpio -i 
-    	rm -rf Bom PackageInfo Payload Scripts 
-	done
-else
-	echo "OK, exiting"
-    exit 0
-fi
-eval ${EX1T}
+echo "We'll now download and prepare all necessary files."
+echo
+echo
+echo
+read -p "Press enter to continue"
+eval mkdir ${HOME}/${DEST_PATH}/Clover/ 
+eval cd ${HOME}/${DEST_PATH}/Clover/ 
+wget https://sourceforge.net/projects/cloverefiboot/files/latest/download 
+eval mv download Clover.zip 
+eval cd ${HOME}/${DEST_PATH}/Clover/
+eval 7z x Clover.zip 
+eval mkdir ${HOME}/${DEST_PATH}/Clover/Clover.pkg 
+eval cd ${HOME}/${DEST_PATH}/Clover/ 
+eval mv Clover_*.pkg ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Clover_*.pkg 
+sleep 1
+eval cd ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ 
+xar -xzf Clover_*.pkg 
+eval rm -rf ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Clover_*.pkg 
+eval rm -rf ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Distribution 
+for i in ${HOME}/${DEST_PATH}/Clover/Clover.pkg/*
+do
+   	eval cd ${i}
+   	eval cat "Payload" | eval gzip -c -d -q | cpio -i 
+   	rm -rf Bom PackageInfo Payload Scripts 
+done
 } 
 
 CLUEFI()	#Installing Clover for UEFI boot
@@ -697,7 +836,6 @@ if [[ $CLUEFIANS90 = YES ]] || [[ $CLUEFIANS90 = yes ]] || [[ $CLUEFIANS90 = Yes
 	echo
 	read -p "Press enter to continue"
 fi
-eval ${EX1T}
 cloudconfig
 } 
 
@@ -721,7 +859,6 @@ if [[ $CLCLOU = YES ]] || [[ $CLCLOU = yes ]] || [[ $CLCLOU = Yes ]] ; then
 	echo
 	read -p "Press enter to continue"
 fi
-eval ${EX1T}
 addkexts
 } 
 
@@ -748,7 +885,6 @@ if [[ $KEXTANS = YES ]] || [[ $KEXTANS = yes ]] || [[ $KEXTANS = Yes ]] ; then
 else
 	echo "Kexts will not be added."
 fi
-eval ${EX1T}
 } 
 
 docloverimg() #Create EFI image file #Not in use
@@ -785,7 +921,7 @@ sudo dd if=/dev/zero of=OS\ X\ Base\ System.img count=2500 bs=1M status=progress
 #sleep 1
 #eval sudo udisksctl loop-setup -f "OS\ X\ Base\ System.img"
 #sleep 1
-#eval LOOP="$( losetup -l | grep "System.img" | gawk "{print \$1}" )"
+#eval LOOP="$( losetup -l | grep "System.img" | awk "{print \$1}" )"
 #sleep 1
 #echo "${LOOP}"
 #sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk "${LOOP}"
@@ -873,6 +1009,11 @@ Current boot device is $BOOTDEVICE."
 		[a-z][a-z][a-z][1-9])	eval cat ${HOME}/${DEST_PATH}/Clover/Available_Disks_List.txt | grep "$CLLISTDISKANS" > /dev/null
 							if [ $? != 1 ] ; then 
 								echo "   <--Valid input, continuing."
+								echo
+								echo
+								echo "Are you sure? Please check carefully and press ENTER to continue or CTRL+C to abort!"
+								read -p "Press enter to continue"
+								echo
 								DISKX="$CLLISTDISKANS" 
 								echo
 								echo "Target disk is /dev/$DISKX" 
@@ -891,7 +1032,7 @@ done
 sleep 2
 eval udisksctl mount -b "/dev/${DISKX}" 
 sleep1
-eval mount | grep "${DISKX}" | gawk "{print \$3}" | sed "s/ /\\\ /g" > ${HOME}/${DEST_PATH}/Clover/target.txt
+eval mount | grep "${DISKX}" | awk "{print \$3}" | sed "s/ /\\\ /g" > ${HOME}/${DEST_PATH}/Clover/target.txt
 TARGET="$(cat ${HOME}/${DEST_PATH}/Clover/target.txt)"
 if [ -z "$TARGET" ]
 then
@@ -906,7 +1047,6 @@ eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/EFI/ "${TARGET}"/
 echo 
 echo
 echo "Finished copying files." 
-eval ${EX1T}
 UNMPART
 } 
 
@@ -926,11 +1066,14 @@ if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] || [[ $EXITANS = Yes ]] ; then
 else
 	echo "Clover Boot Loader was successfully installed!"
 fi
-eval ${EX1T}
 } 
 
 domacosinstall() #macOS installer
 {
+eval ${GETOS}
+eval ${GETBOOT}
+eval ${RVENT}
+FSPACE="$( df -H -P \/ | tail -n 1 | awk "{print \$4}" | sed "s/[a-z A-Z]//g" )"
 clear
 printf '\e[?5h'  # Turn on reverse video
 sleep 0.05
@@ -938,24 +1081,23 @@ printf '\e[?5l'  # Turn on normal video
 echo "Do you want to create a macOS Mojave installer?
 This option will download needed files and create a macOS installer.
 
+This step may take some time to complete, so please, be patient...
+
 Please write YES or NO."
 read MACOSANS
-if [[ $MACOSANS = YES ]] || [[ $MACOSANS = yes ]] || [[ $MACOSANS = Yes ]] ; then
-	eval mkdir ${HOME}/${DEST_PATH}/macOS/ 
-	eval cd ${HOME}/${DEST_PATH}/macOS/
-	wget http://swcdn.apple.com/content/downloads/49/44/041-08708/vtip954dc6zbkpdv16iw18jmilcqdt8uot/BaseSystem.dmg 
-	wget http://swcdn.apple.com/content/downloads/07/20/091-95774/awldiototubemmsbocipx0ic9lj2kcu0pt/BaseSystem.chunklist 
-	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/InstallInfo.plist 
-	wget http://swcdn.apple.com/content/downloads/00/21/091-76348/67qi57g3fqpytl06cofi6bn2uuughsq2uo/InstallESDDmg.pkg 
-	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/AppleDiagnostics.dmg 
-	wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/AppleDiagnostics.chunklist 
-	sleep 1
-	mv ${HOME}/${DEST_PATH}/macOS/InstallESDDmg.pkg ${HOME}/${DEST_PATH}/macOS/InstallESD.dmg 
-	echo
-	echo
-	echo "Downloads finished!"
-	changeinstallinfo
-	copybasesystem
+if [[ $MACOSANS = YES ]] || [[ $MACOSANS = yes ]] || [[ $MACOSANS = Yes ]] ; then 
+	if (("$FSPACE" > "$TSPACE")) ; then
+		echo
+		echo
+		echo "Needed space ${TSPACE}Gb , available space ${FSPACE}Gb , OK continuing..."
+		sleep 2
+		copybasesystem
+	else
+		echo "We must have at least ${TSPACE}Gb of free space to complete this task.
+
+Currently you have only ${FSPACE}Gb available, sorry, we are working on a way to bypass this limitation."
+		exit 0
+	fi
 else
 	echo "The installer will not be created."
 	exit 0
@@ -965,31 +1107,43 @@ eval ${EX1T}
 
 changeinstallinfo() #Make necessary modifications to InstallInfo.plist
 {
-sed -i -e 's/<key>chunklistURL<\/key>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist 
+eval sudo sed -i -e "'s/<key>chunklistURL<\/key>//g'" "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist" 
 sleep 1
-sed -i -e 's/<string>InstallESDDmg.chunklist<\/string>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist 
+eval sudo sed -i -e "'s/<string>InstallESDDmg.chunklist<\/string>//g'" "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist"
 sleep 1
-sed -i -e 's/<key>chunklistid<\/key>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist 
+eval sudo sed -i -e "'s/<key>chunklistid\<\/key>//g'" "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist"
 sleep 1
-sed -i -e 's/<string>com.apple.chunklist.InstallESDDmg<\/string>//g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist 
+eval sudo sed -i -e "'s/<string>com.apple.chunklist.InstallESDDmg<\/string>//g'" "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist" 
 sleep 1
-sed -i -e 's/<string>InstallESDDmg.pkg<\/string>/<string>InstallESD.dmg<\/string>/g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist 
+eval sudo sed -i -e "'s/<string>InstallESDDmg.pkg<\/string>/<string>InstallESD.dmg<\/string>/g'" "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist" 
 sleep 1
-sed -i -e 's/<string>com.apple.pkg.InstallESDDmg<\/string>/<string>com.apple.dmg.InstallESD<\/string>/g' ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist 
+eval sudo sed -i -e "'s/<string>com.apple.pkg.InstallESDDmg<\/string>/<string>com.apple.dmg.InstallESD<\/string>/g'" "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist" 
 sleep 1
-eval ${EX1T}
 }
 
 dobasesystem() #Creates macOS installer
 {
-eval sudo mkdir "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/" 
-eval sudo mv ${HOME}/${DEST_PATH}/macOS/BaseSystem.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.dmg" | progress -m \$!
-eval sudo mv ${HOME}/${DEST_PATH}/macOS/BaseSystem.chunklist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.chunklist" | progress -m \$!
-eval sudo mv ${HOME}/${DEST_PATH}/macOS/InstallInfo.plist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallInfo.plist" | progress -m \$!
-eval sudo mv ${HOME}/${DEST_PATH}/macOS/InstallESD.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg" | progress -m \$!
-eval sudo mv ${HOME}/${DEST_PATH}/macOS/AppleDiagnostics.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.dmg" | progress -m \$!
-eval sudo mv ${HOME}/${DEST_PATH}/macOS/AppleDiagnostics.chunklist "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/AppleDiagnostics.chunklist" | progress -m \$!
-eval ${EX1T}
+eval cd "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/"
+eval sudo wget http://swcdn.apple.com/content/downloads/07/20/091-95774/awldiototubemmsbocipx0ic9lj2kcu0pt/BaseSystem.chunklist 
+eval sudo wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/InstallInfo.plist 
+eval sudo wget http://swcdn.apple.com/content/downloads/00/21/091-76348/67qi57g3fqpytl06cofi6bn2uuughsq2uo/InstallESDDmg.pkg 
+eval sudo wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/AppleDiagnostics.dmg 
+eval sudo wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/AppleDiagnostics.chunklist 
+sleep 1
+eval sudo mv "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESDDmg.pkg" "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg"
+echo
+echo
+echo "Aditional downloads finished!"
+echo
+echo
+changeinstallinfo
+echo
+echo
+echo "Installer successful created!
+		
+Unplug and replug your USB Stick in order to view the files.
+
+Thank you for using Linux4macOS tool!"
 }
 
 copybasesystem()	#Converting image to partition
@@ -1001,14 +1155,18 @@ printf '\e[?5l'  # Turn on normal video
 echo "Before we proceed, we must know where to place the files.
 Choose the target partition at your USB Stick, for the macOS installer
 
-The partition must have at least 7Gb free
-
-Do you want to proceed? Please write YES or NO"
-read CPBASEANS
-if [[ $CPBASEANS = YES ]] || [[ $CPBASEANS = yes ]] || [[ $CPBASEANS = Yes ]] ; then
-	eval lsblk -o name,rm,hotplug,mountpoint | tee ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt 
-	eval cat ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt
-	echo
+The partition must have at least 7Gb free"
+echo
+echo
+echo
+read -p "Press enter to continue"
+echo
+echo
+eval mkdir ${HOME}/${DEST_PATH}/macOS
+eval lsblk -o name,rm,hotplug,mountpoint | tee ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt 
+eval cat ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt
+echo
+while true; do
 	printf '\e[?5h'  # Turn on reverse video
 	sleep 0.05
 	printf '\e[?5l'  # Turn on normal video
@@ -1016,81 +1174,100 @@ if [[ $CPBASEANS = YES ]] || [[ $CPBASEANS = yes ]] || [[ $CPBASEANS = Yes ]] ; 
 Be careful, the disk will be formatted as HFS+ and all data on it will be lost!
 
 Current boot device is $BOOTDEVICE."
-	read CPBASEANS22
-	if [[ ${CPBASEANS22} != "^ " ]] ; then
-		DISK="${CPBASEANS22}" 
-		domacosimg
-		eval cd ${HOME}/${DEST_PATH}/macOS/
-		sudo dmg2img -v -i BaseSystem.dmg -p 4 -o OS\ X\ Base\ System.img 
-		sleep 3
-		eval sudo udisksctl loop-setup -f "${HOME}/${DEST_PATH}/macOS/OS\ X\ Base\ System.img" 
-		eval LOOP="$( losetup -l | grep "System.img" | gawk "{print \$1}" )" 
-		if [ -z "$LOOP" ]
-		then
-			echo "\$LOOP is empty" 
-			exit 1
-		else
-			echo "Image OK continuing..." 
-			echo $LOOP 
-		fi
-		eval LOOPM="$( echo ${LOOP} | tac | grep -o "l.*" )"
-		if [ -z "$LOOPM" ]
-		then
-			echo "\$LOOPM is empty" 
-			exit 1
-		else
-			echo "Image block OK continuing..." 
-			echo $LOOPM 
-		fi
-		eval udisksctl mount -b "${LOOP}" 
-		sleep 1
-		eval sudo mkfs.hfsplus "/dev/${DISK}" -v "OS\ X\ Base\ System" 
-		sleep 3
-		eval udisksctl mount -b "/dev/${DISK}" 
-		sleep 1
-		eval mount | grep "/dev/${DISK}" | gawk "{print \$3, \$4, \$5, \$6}" | sed "s/ /\\\ /g" > ${HOME}/${DEST_PATH}/macOS/target.txt
-		TARGET="$(cat ${HOME}/${DEST_PATH}/macOS/target.txt)"
-		if [ -z "$TARGET" ]
-		then
-			echo "\$TARGET is empty" 
-			exit 1
-		else
-			echo "Target partition OK continuing..." 
-			echo "${TARGET}"
-		fi
-		sleep 1
-		eval mount | grep "${LOOP}" | gawk "{print \$3, \$4, \$5, \$6}" | sed "s/ /\\\ /g" > ${HOME}/${DEST_PATH}/macOS/loopdir.txt
-		LOODIR="$(cat ${HOME}/${DEST_PATH}/macOS/loopdir.txt)"
-		if [ -z "$LOODIR" ]
-		then
-			echo "\$LOODIR is empty" 
-			exit 1
-		else
-			echo "Source directory OK continuing..." 
-			echo "${LOODIR}" 
-		fi
-		sleep 1
-		eval sudo cp -R "${LOODIR}"/* "${TARGET}"/ | progress -m \$!
-		sleep 3
-		echo "Finishing tasks, this may take some time...
-		
-After finishing copiyng files, it may appear that it hangs, but it is just finishing up."
-		echo
-		dobasesystem
-		sleep 3
-		eval udisksctl unmount "${LOOP}" 
-		eval udisksctl loop-delete -b "${LOOP}" 
-		echo "Installer successful created!
-		
-Unplug and replug your USB Stick in order to view the files.
+	read -n 4 CPBASEANS22
+	case $CPBASEANS22 in
+		" "" "" "" ") echo "   <--Invalid input! Try again."
+			 echo
+			 echo
+			 continue	;;
 
-Thank you for using Linux4macOS tool!"
-	else
-		echo "An unknown error occured, please send a report"
-    	exit 1
-    fi
-fi
-eval ${EX1T}
+		[1-9][1-9][1-9][1-9])	echo "   <--Invalid input! Try again."
+			 echo
+			 echo
+			 continue		;;
+
+		[a-z][a-z][a-z][1-9])	eval cat ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt | grep "$CPBASEANS22" > /dev/null
+							if [ $? != 1 ] ; then
+								echo "   <--Valid input, continuing."
+								echo
+								echo
+								echo "Are you sure? Please check carefully and press ENTER to continue or CTRL+C to abort!"
+								read -p "Press enter to continue"
+								echo
+								DISK="${CPBASEANS22}"  
+								eval cd ${HOME}/${DEST_PATH}/macOS/
+								wget http://swcdn.apple.com/content/downloads/49/44/041-08708/vtip954dc6zbkpdv16iw18jmilcqdt8uot/BaseSystem.dmg
+								sleep 2
+								domacosimg
+								eval cd ${HOME}/${DEST_PATH}/macOS/
+								sleep 2
+								sudo dmg2img -v -i BaseSystem.dmg -p 4 -o OS\ X\ Base\ System.img 
+								sleep 2
+								eval sudo udisksctl loop-setup -f "${HOME}/${DEST_PATH}/macOS/OS\ X\ Base\ System.img" 
+								eval LOOP="$( losetup -l | grep "System.img" | awk "{print \$1}" )" 
+								if [ -z "$LOOP" ]
+								then
+									echo "\$LOOP is empty" 
+									exit 1
+								else
+									echo "Image OK continuing..." 
+									echo $LOOP 
+								fi
+								eval LOOPM="$( echo ${LOOP} | tac | grep -o "l.*" )"
+								if [ -z "$LOOPM" ]
+								then
+									echo "\$LOOPM is empty" 
+									exit 1
+								else
+									echo "Image block OK continuing..." 
+									echo $LOOPM 
+								fi
+								eval udisksctl mount -b "${LOOP}" 
+								sleep 1
+								eval sudo mkfs.hfsplus "/dev/${DISK}" -v "OS\ X\ Base\ System" 
+								sleep 3
+								eval udisksctl mount -b "/dev/${DISK}" 
+								sleep 1
+								eval mount | grep "/dev/${DISK}" | awk "{print \$3, \$4, \$5, \$6}" | sed "s/ /\\\ /g" > ${HOME}/${DEST_PATH}/macOS/target.txt
+								TARGET="$(cat ${HOME}/${DEST_PATH}/macOS/target.txt)"
+								if [ -z "$TARGET" ]
+								then
+									echo "\$TARGET is empty" 
+									exit 1
+								else
+									echo "Target partition OK continuing..." 
+									echo "${TARGET}"
+								fi
+								sleep 1
+								eval mount | grep "${LOOP}" | awk "{print \$3, \$4, \$5, \$6}" | sed "s/ /\\\ /g" > ${HOME}/${DEST_PATH}/macOS/loopdir.txt
+								LOODIR="$(cat ${HOME}/${DEST_PATH}/macOS/loopdir.txt)"
+								if [ -z "$LOODIR" ]
+								then
+									echo "\$LOODIR is empty" 
+									exit 1
+								else
+									echo "Source directory OK continuing..." 
+									echo "${LOODIR}" 
+								fi
+								sleep 1
+								eval sudo cp -R "${LOODIR}"/* "${TARGET}"/ & do_spin
+								sleep 3
+								eval udisksctl unmount -b "${LOOP}" 
+								eval udisksctl loop-delete -b "${LOOP}" 
+								sleep 1
+								eval sudo mkdir "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/" 
+								eval sudo mv ${HOME}/${DEST_PATH}/macOS/BaseSystem.dmg "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/BaseSystem.dmg" & do_spin
+								dobasesystem
+							else
+								echo "   <--Invalid input! Try again."
+								echo
+								echo
+								continue
+							fi
+							break
+							;;
+	esac
+done
 } 
 
 runall()	#Run all tasks -l
@@ -1098,9 +1275,7 @@ runall()	#Run all tasks -l
 hello
 verifydeps
 system_dump
-acpi_tool
 acpidump 
-dev_tool
 applefs
 dousbstick
 clover_ask
