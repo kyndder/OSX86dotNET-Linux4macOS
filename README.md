@@ -5,16 +5,14 @@ Linux4macOS, is a script to help users fix a macOS install from Linux.
 
 This are the current features:
 
-  - Creates a macOS installer.
+  - Create a macOS installer.
   - Install Clover Bootloader to disk for UEFI and Legacy boot.
   - Download and install Basic set of kexts (work in progress).
   - Install hfsprogs to access HFS and HFS+ formatted partitions.
   - Compile and Install APFS-Fuse to access APFS formatted partitions.
   - Mount APFS formatted partitions.
-  - Installs basic developments tools.
-  - Installs ACPI tools.
-  - Extracts and decompile ACPI Tables.
-  - Makes complete system dump.
+  - Extract and decompile ACPI Tables.
+  - Make complete system dump including Full Audio Codec dump and EDID.
 
 Currently it has full capabities Manjaro and Ubuntu but, the script
 was made with the intention of make it compatible to others distros.
