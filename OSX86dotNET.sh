@@ -494,6 +494,21 @@ if [[ $SISANS = YES ]] || [[ $SISANS = yes ]] ; then
     sudo lshw -short > "$HOME/$DEST_PATH/Dumps/Hardware_Sumary.txt"
     tree -F /boot/efi/ > "$HOME/$DEST_PATH/Dumps/EFI_Info.txt"
     efivar -L > "$HOME/$DEST_PATH/Dumps/EFI_Var.txt"
+    sudo dmidecode -t 0 > "$HOME/$DEST_PATH/Dumps/BIOS_Information.txt"
+    sudo dmidecode -t 20 > "$HOME/$DEST_PATH/Dumps/Memory_Information.txt"
+    audiocodeclist="$( ls /proc/asound/ | grep card )"
+    for i in $audiocodeclist ; do
+		eval sudo cat /proc/asound/$i || sudo cat /proc/asound/$i/codec\#0 | tee $HOME/$DEST_PATH/Dumps/Audio_Codec_$i.txt 
+    done
+    itemp=""
+    for i in $( sudo find \/sys\/. | grep card | grep -i edid ) ; do
+		itemp="$( echo $i | sed "s@:@_@g; s@/@_@g; s@\.@_@g" | sed -n -e "s@^.*drm@@p" )"
+		eval sudo hexdump -C $i | tee $HOME/$DEST_PATH/Dumps/$itemp.txt
+		eval cat $HOME/$DEST_PATH/Dumps/$itemp.txt | grep .
+		if [ $? -ne 0 ] ; then
+			eval sudo rm -rf $HOME/$DEST_PATH/Dumps/$itemp.txt
+		fi 
+    done
 fi
 eval ${EX1T}
 } 
