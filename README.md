@@ -1,5 +1,5 @@
 # OSX86dotNET-Linux4macOS
-##A tool to help fixing macOS from Linux
+## A tool to help fixing macOS from Linux
 
 
 Linux4macOS, is a script to help users fix a macOS install from Linux.
@@ -20,9 +20,11 @@ This are the current features:
 Currently it has full capabities Manjaro and Ubuntu but, the script
 was made with the intention of make it compatible to others distros.
 
-You can download Manjaro Linux from here > https://manjaro.org/get-manjaro/
 
-You can download Ubuntu Linux from here > https://www.ubuntu.com/download/desktop
+> You can download Manjaro Linux from [here](https://manjaro.org/get-manjaro/)
+
+> You can download Ubuntu Linux from [here](https://www.ubuntu.com/download/desktop)
+
 
 The usage is simple, clone or download it, go to its directory and run;
 ```
@@ -59,14 +61,14 @@ dev_tool            =Check and install development tools"
 mount_apfs_volume   =Mount an APFS Volume
 ```
 
-This is a work in progress, so, suggestions are welcome.
+###### This is a work in progress, so, suggestions are welcome.
 
 The idea of this script is to create a complete environment, to fix
 a macOS installation from a LiveCD, for example, or for those not so familiar
 with Linux and its capabilities.
 
 
-######Thanks to;
+###### Thanks to;
 
 [pacapt team](https://github.com/icy/pacapt/blob/master/pacapt#L168)
 
