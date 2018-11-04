@@ -1,5 +1,5 @@
 # OSX86dotNET-Linux4macOS
-## A tool to help fixing macOS from Linux
+#### A tool to help fixing macOS from Linux
 
 
 Linux4macOS, is a script to help users fix a macOS install from Linux.
@@ -25,12 +25,18 @@ was made with the intention of make it compatible to others distros.
 
 > You can download Ubuntu Linux from [here](https://www.ubuntu.com/download/desktop)
 
+Keep inf mind that, by running the script from a LiveOS, you may need to perform a full
+system upgrade. The script will automatically do this for Manjaro but, for Ubuntu, external
+configuration is needed in order ro allow access to all repositories.
+
 
 The usage is simple, clone or download it, go to its directory and run;
 ```
 
-./OSX86dotNET.sh
+./OSX86dotNET.sh -l
 ```
+This will make the script run all tasks, an option is mandatory, it won't run without any...
+
 
 The available options are:
 ```
@@ -41,7 +47,7 @@ The available options are:
 -h 		= This help
 -i 		= Create a macOS installer
 -l 		= Run all tasks
--v 		= Verbose output"
+-v 		= Verbose output
 ```
  
 Arguments are used for direct jump to a specific function and may be used 
@@ -61,14 +67,14 @@ dev_tool            =Check and install development tools"
 mount_apfs_volume   =Mount an APFS Volume
 ```
 
-###### This is a work in progress, so, suggestions are welcome.
+#### This is a work in progress, so, suggestions are welcome.
 
 The idea of this script is to create a complete environment, to fix
 a macOS installation from a LiveCD, for example, or for those not so familiar
 with Linux and its capabilities.
 
 
-###### Thanks to;
+#### Thanks to;
 
 [pacapt team](https://github.com/icy/pacapt/blob/master/pacapt#L168)
 
