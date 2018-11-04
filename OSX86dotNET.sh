@@ -1164,7 +1164,7 @@ This step may take some time to complete, so please, be patient...
 Please write YES or NO."
 read MACOSANS
 if [[ $MACOSANS = YES ]] || [[ $MACOSANS = yes ]] || [[ $MACOSANS = Yes ]] ; then 
-	if (("$FSPACE" > "$TSPACE")) ; then
+	if [[ $(echo "$FSPACE > $TSPACE" | bc) -eq 1 ]] ; then
 		echo
 		echo
 		echo "Needed space ${TSPACE}Gb , available space ${FSPACE}Gb , OK continuing..."
