@@ -856,7 +856,7 @@ eval cd ${HOME}/${DEST_PATH}/Clover/
 eval mv Clover_*.pkg ${HOME}/${DEST_PATH}/Clover/Clover.pkg/
 sleep 1
 eval cd ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ 
-xar -xzf Clover_*.pkg 
+xar -xf Clover_*.pkg 
 eval rm -rf ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Clover_*.pkg 
 eval rm -rf ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Distribution 
 for i in ${HOME}/${DEST_PATH}/Clover/Clover.pkg/*
