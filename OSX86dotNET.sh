@@ -30,6 +30,7 @@ LOOP=""
 BOOTDEVICE=""
 FSPACE=""
 OSTYPE=""
+UNMLIST=""
 
 while getopts "h?cavd:il" opt; do
     case "$opt" in
@@ -513,22 +514,6 @@ fi
 eval ${EX1T}
 } 
 
-#acpi_tool()	#Check IASL
-#{
-#if ( command -v iasl > /dev/null 2>&1 ) ; then
-#		echo "ACPI tools found!"  
-#	else
-#		echo "ACPI tools not found, installing package using package manager"  
-#	    eval sudo ${PACMAN} $DP2 
-#	    if [ $? -eq 0 ] ; then
-#    	echo "ACPI tools successful instaled"  
-#    else
-#    	echo "An unknown error occured, please send a report"
-#    	exit 1
-#    fi
-#fi
-#} 
-
 acpidump()	#Dumping ACPI Table
 {
 eval ${GETOS}
@@ -808,6 +793,12 @@ Current boot device is $BOOTDEVICE."
 								read -p "Press enter to continue"
 								echo
 								DISK="$LISTDISKANS"
+								UNMLIST="$(mount | grep "$DISK[1-9]" | awk "{print \$1}")"
+								for i in $UNMLIST
+								do
+									eval udisksctl unmount -b "${i}" &> /dev/null
+								done
+								sleep 2
 								echo
 								echo "Target disk is /dev/$DISK" 
 								echo
@@ -862,7 +853,7 @@ eval cd ${HOME}/${DEST_PATH}/Clover/
 eval 7z x Clover.zip 
 eval mkdir ${HOME}/${DEST_PATH}/Clover/Clover.pkg 
 eval cd ${HOME}/${DEST_PATH}/Clover/ 
-eval mv Clover_*.pkg ${HOME}/${DEST_PATH}/Clover/Clover.pkg/Clover_*.pkg 
+eval mv Clover_*.pkg ${HOME}/${DEST_PATH}/Clover/Clover.pkg/
 sleep 1
 eval cd ${HOME}/${DEST_PATH}/Clover/Clover.pkg/ 
 xar -xzf Clover_*.pkg 
