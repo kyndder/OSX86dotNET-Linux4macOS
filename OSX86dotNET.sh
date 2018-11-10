@@ -106,8 +106,8 @@ OS[10]="Gentoo" #EMERGE
 OSTYPE=""
 
 #Package Manager
-PKM[1]="pacman -Syyu --noconfirm" #Arch / Manjaro
-PKM[2]="pacman -Syyu --noconfirm" #Arch / Manjaro
+PKM[1]="pacman -Sy --noconfirm" #Arch / Manjaro
+PKM[2]="pacman -Sy --noconfirm" #Arch / Manjaro
 PKM[3]="apt-get -y install" #Debian / Ubuntu / Mint
 PKM[4]="apt-get -y install" #Debian / Ubuntu / Mint
 PKM[5]="apt-get -y install" #Debian / Ubuntu / Mint
@@ -120,6 +120,8 @@ PKM[10]="emerge --pretend" #Gentoo
 PM=""
 
 #Dependencies
+DP[-2]="mtools"
+DP[-1]="dosfstools"
 DP[0]="awk"
 DP[1]="pv"
 DP[2]="tree"
@@ -272,7 +274,7 @@ eval ${EX1T}
 
 deps()	#Check dependencies
 {
-for i in `seq 0 4`
+for i in `seq -2 4`
 do
 	if command -v ${DP[i]} > /dev/null 2>&1 ; then 
 		echo "${DP[i]} found!"  
@@ -463,7 +465,7 @@ do
     	if [ $? -eq 0 ] ; then
     		echo "${DP[i]} successful instaled"  
     	else
-    		eval yay -Syyu --noconfirm ${DP[i]}  
+    		eval yay -Sy --noconfirm ${DP[i]}  
     		if [ $? -eq 0 ] ; then
     			echo "${DP[i]} successful instaled" 
     		else
