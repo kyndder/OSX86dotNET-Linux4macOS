@@ -81,6 +81,8 @@ done
 
 printf '\e[8;35;141t'
 
+echo -e '\033]2;'$DEST_PATH'\007'
+
 ${VERBOSE}
 
 eval mkdir -p "$HOME/$DEST_PATH"
@@ -126,39 +128,40 @@ DP[4]="git"
 #Arch
 DP[5]="base-devel"
 DP[6]="devtools"
-DP[7]="fuse-common"
-DP[8]="icu"
-DP[9]="zlib"
-DP[10]="lib32-zlib"
-DP[11]="ncurses"
-DP[12]="acpica"
-DP[13]="bzip2"
-DP[14]="yay"
+DP[7]="cmake"
+DP[8]="fuse-common"
+DP[9]="icu"
+DP[10]="zlib"
+DP[11]="lib32-zlib"
+DP[12]="ncurses"
+DP[13]="acpica"
+DP[14]="bzip2"
+DP[15]="yay"
 #Clover
-DP[15]="7z"
-DP[16]="curl"
-DP[17]="gzip"
-DP[18]="libxml2"
-DP[19]="xarchiver"
-DP[20]="xar"
-DP[21]="hfsprogs"
-DP[22]="cpio"
-DP[23]="progress"
-DP[24]="dmg2img"
-DP[25]="hfsutils"
+DP[16]="7z"
+DP[17]="curl"
+DP[18]="gzip"
+DP[19]="libxml2"
+DP[20]="xarchiver"
+DP[21]="xar"
+DP[22]="hfsprogs"
+DP[23]="cpio"
+DP[24]="progress"
+DP[25]="dmg2img"
+DP[26]="hfsutils"
 #Debian
-DP[26]="fuse-emulator-common"
-DP[27]="icu-devtools"
-DP[28]="zlib1g-dev"
-DP[29]="zlib1g"
-DP[30]="ncurses-base"
-DP[31]="ncurses-dev"
-DP[32]="acpica-tools"
-DP[33]="build-essential"
-DP[34]="libxml2-dev"
-DP[35]="libssl1.0-dev"
-DP[36]="libbz2-dev"
-DP[37]="libfuse-dev"
+DP[27]="fuse-emulator-common"
+DP[28]="icu-devtools"
+DP[29]="zlib1g-dev"
+DP[30]="zlib1g"
+DP[31]="ncurses-base"
+DP[32]="ncurses-dev"
+DP[33]="acpica-tools"
+DP[34]="build-essential"
+DP[35]="libxml2-dev"
+DP[36]="libssl1.0-dev"
+DP[37]="libbz2-dev"
+DP[38]="libfuse-dev"
 
 IFS=$'\n'
 
@@ -291,7 +294,7 @@ CHKDEPS()	#Check dependencies by OS
 echo "${OSTYPE}" | while IFS= read -r line ; do
 case $line in
 	Arch )	 echo "$OSTYPE"		 
-	for i in `seq 5 14`
+	for i in `seq 5 15`
 	do
 		if pacman -Qk ${DP[i]} > /dev/null 2>&1 || pacman -Qs ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -309,7 +312,7 @@ case $line in
 	break	
 	;;
 	Manjaro	)	 echo "$OSTYPE"		 
-	for i in `seq 5 14`
+	for i in `seq 5 15`
 	do
 		if pacman -Qk ${DP[i]} > /dev/null 2>&1 || pacman -Qs ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -327,7 +330,7 @@ case $line in
 	break	
 	;;
 	Debian ) 	echo "$OSTYPE"
-	for i in `seq 26 37`
+	for i in `seq 26 38`
 	do
 		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -347,7 +350,7 @@ case $line in
 	break
 	;;
 	Ubuntu ) 	echo "$OSTYPE"
-	for i in `seq 26 37`
+	for i in `seq 26 38`
 	do
 		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -367,7 +370,7 @@ case $line in
 	break
 	;;
 	Mint ) 	echo "$OSTYPE"
-	for i in `seq 26 37`
+	for i in `seq 26 38`
 	do
 		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -389,6 +392,7 @@ case $line in
 esac
 done
 }
+
 build_xar()		#Building xar for Deb
 {
 if ( command -v xar > /dev/null 2>&1 ) ; then  
@@ -682,7 +686,7 @@ Current boot device is $BOOTDEVICE."
 								sleep 2
 								echo "APFS volume mounted..."
 								echo
-								eval xdg-open ${HOME}/${DEST_PATH}/APFS_Volume/ &
+								eval xdg-open ${HOME}/${DEST_PATH}/APFS_Volume/ </dev/null &>/dev/null &
 								echo
 								read -p "Press enter to continue"
 							else
@@ -796,7 +800,7 @@ Current boot device is $BOOTDEVICE."
 								UNMLIST="$(mount | grep "$DISK[1-9]" | awk "{print \$1}")"
 								for i in $UNMLIST
 								do
-									eval udisksctl unmount -b "${i}" &> /dev/null
+									eval udisksctl unmount -b "${i}" </dev/null &>/dev/null &
 								done
 								sleep 2
 								echo
@@ -1351,7 +1355,7 @@ dousbstick
 clover_ask
 domacosinstall
 echo
-eval xdg-open ${HOME}/${DEST_PATH}/ &
+eval xdg-open ${HOME}/${DEST_PATH}/ </dev/null &>/dev/null &
 }
 
 $OPTA
