@@ -333,7 +333,7 @@ case $line in
 	break	
 	;;
 	Debian ) 	echo "$OSTYPE"
-	for i in `seq 29 40`
+	for i in `seq 29 41`
 	do
 		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -353,7 +353,7 @@ case $line in
 	break
 	;;
 	Ubuntu ) 	echo "$OSTYPE"
-	for i in `seq 29 40`
+	for i in `seq 29 41`
 	do
 		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -373,7 +373,7 @@ case $line in
 	break
 	;;
 	Mint ) 	echo "$OSTYPE"
-	for i in `seq 29 40`
+	for i in `seq 29 41`
 	do
 		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
