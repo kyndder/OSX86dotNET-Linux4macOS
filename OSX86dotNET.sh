@@ -164,6 +164,7 @@ DP[37]="libxml2-dev"
 DP[38]="libssl1.0-dev"
 DP[39]="libbz2-dev"
 DP[40]="libfuse-dev"
+DP[41]="p7zip-full"
 
 IFS=$'\n'
 
@@ -1270,6 +1271,11 @@ Current boot device is $BOOTDEVICE."
 								read -p "Press enter to continue"
 								echo
 								DISK="${CPBASEANS22}"  
+								UNMLIST="$(mount | grep "$DISK" | awk "{print \$1}")"
+								for i in $UNMLIST
+								do
+									eval udisksctl unmount -b "${i}" </dev/null &>/dev/null &
+								done
 								eval cd ${HOME}/${DEST_PATH}/macOS/
 								wget http://swcdn.apple.com/content/downloads/49/44/041-08708/vtip954dc6zbkpdv16iw18jmilcqdt8uot/BaseSystem.dmg
 								sleep 2
