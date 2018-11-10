@@ -120,50 +120,50 @@ PKM[10]="emerge --pretend" #Gentoo
 PM=""
 
 #Dependencies
-DP[-2]="mtools"
-DP[-1]="dosfstools"
-DP[0]="awk"
-DP[1]="pv"
-DP[2]="tree"
-DP[3]="inxi"
-DP[4]="git"
+DP[0]="mtools"
+DP[1]="dosfstools"
+DP[2]="awk"
+DP[3]="pv"
+DP[4]="tree"
+DP[5]="inxi"
+DP[6]="git"
 #Arch
-DP[5]="base-devel"
-DP[6]="devtools"
-DP[7]="cmake"
-DP[8]="fuse-common"
-DP[9]="icu"
-DP[10]="zlib"
-DP[11]="lib32-zlib"
-DP[12]="ncurses"
-DP[13]="acpica"
-DP[14]="bzip2"
-DP[15]="yay"
+DP[7]="base-devel"
+DP[8]="devtools"
+DP[9]="cmake"
+DP[10]="fuse-common"
+DP[11]="icu"
+DP[12]="zlib"
+DP[13]="lib32-zlib"
+DP[14]="ncurses"
+DP[15]="acpica"
+DP[16]="bzip2"
+DP[17]="yay"
 #Clover
-DP[16]="7z"
-DP[17]="curl"
-DP[18]="gzip"
-DP[19]="libxml2"
-DP[20]="xarchiver"
-DP[21]="xar"
-DP[22]="hfsprogs"
-DP[23]="cpio"
-DP[24]="progress"
-DP[25]="dmg2img"
-DP[26]="hfsutils"
+DP[18]="7z"
+DP[19]="curl"
+DP[20]="gzip"
+DP[21]="libxml2"
+DP[22]="xarchiver"
+DP[23]="xar"
+DP[24]="hfsprogs"
+DP[25]="cpio"
+DP[26]="progress"
+DP[27]="dmg2img"
+DP[28]="hfsutils"
 #Debian
-DP[27]="fuse-emulator-common"
-DP[28]="icu-devtools"
-DP[29]="zlib1g-dev"
-DP[30]="zlib1g"
-DP[31]="ncurses-base"
-DP[32]="ncurses-dev"
-DP[33]="acpica-tools"
-DP[34]="build-essential"
-DP[35]="libxml2-dev"
-DP[36]="libssl1.0-dev"
-DP[37]="libbz2-dev"
-DP[38]="libfuse-dev"
+DP[29]="fuse-emulator-common"
+DP[30]="icu-devtools"
+DP[31]="zlib1g-dev"
+DP[32]="zlib1g"
+DP[33]="ncurses-base"
+DP[34]="ncurses-dev"
+DP[35]="acpica-tools"
+DP[36]="build-essential"
+DP[37]="libxml2-dev"
+DP[38]="libssl1.0-dev"
+DP[39]="libbz2-dev"
+DP[40]="libfuse-dev"
 
 IFS=$'\n'
 
@@ -274,7 +274,7 @@ eval ${EX1T}
 
 deps()	#Check dependencies
 {
-for i in `seq -2 4`
+for i in `seq 0 6`
 do
 	if command -v ${DP[i]} > /dev/null 2>&1 ; then 
 		echo "${DP[i]} found!"  
@@ -296,7 +296,7 @@ CHKDEPS()	#Check dependencies by OS
 echo "${OSTYPE}" | while IFS= read -r line ; do
 case $line in
 	Arch )	 echo "$OSTYPE"		 
-	for i in `seq 5 15`
+	for i in `seq 7 17`
 	do
 		if pacman -Qk ${DP[i]} > /dev/null 2>&1 || pacman -Qs ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -314,7 +314,7 @@ case $line in
 	break	
 	;;
 	Manjaro	)	 echo "$OSTYPE"		 
-	for i in `seq 5 15`
+	for i in `seq 7 17`
 	do
 		if pacman -Qk ${DP[i]} > /dev/null 2>&1 || pacman -Qs ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -332,7 +332,7 @@ case $line in
 	break	
 	;;
 	Debian ) 	echo "$OSTYPE"
-	for i in `seq 26 38`
+	for i in `seq 29 40`
 	do
 		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -352,7 +352,7 @@ case $line in
 	break
 	;;
 	Ubuntu ) 	echo "$OSTYPE"
-	for i in `seq 26 38`
+	for i in `seq 29 40`
 	do
 		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -372,7 +372,7 @@ case $line in
 	break
 	;;
 	Mint ) 	echo "$OSTYPE"
-	for i in `seq 26 38`
+	for i in `seq 29 40`
 	do
 		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -455,7 +455,7 @@ fi
 
 CLVDEPS()	#Check Clover dependencies
 {
-for i in `seq 15 25`
+for i in `seq 18 28`
 do 
 	if ( command -v ${DP[i]} > /dev/null 2>&1 ) || ( pacman -Qi ${DP[i]} > /dev/null 2>&1 ) || ( dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ) ; then  
 		echo "${DP[i]} found!"    
