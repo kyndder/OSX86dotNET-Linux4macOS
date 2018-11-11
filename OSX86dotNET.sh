@@ -32,13 +32,14 @@ FSPACE=""
 OSTYPE=""
 UNMLIST=""
 
-while getopts "h?cavd:il" opt; do
+while getopts "h?cavd:ilg" opt; do
     case "$opt" in
     h)
         echo "Available options are:
  -a 		= Compile and install APFS-Fuse drivers
  -c 		= Install Clover Bootloader to a disk
  -d 		= Used as direct jump, needs extra argument. Use "-?"
+ -g 	 	= Mount a DMG
  -h 	 	= This help
  -i 		= Create a macOS installer
  -l 		= Run all tasks
@@ -75,6 +76,8 @@ while getopts "h?cavd:il" opt; do
     l)  OPTE="runall"
         ;;
     i)  OPTI="domacosinstall"
+        ;;
+    g)  OPTG="mount_dmg_file"
         ;;
     esac
 done
@@ -229,7 +232,7 @@ if [ $? -eq 0 ] ; then
 Do you want to cleanup or keep it?
 
 Please press C for clean or K to keep."
-	read VENTANS
+	read -n 1 VENTANS
 	if [[ $VENTANS = C ]] || [[ $VENTANS = c ]] ; then
 		eval sudo rm -rf ${HOME}/${DEST_PATH}/*
 	fi
@@ -247,7 +250,7 @@ Note that if you are running this script from a Live media, a complete system up
 will be performed and it may take a while to complete at first run, please, be patient.
 
 Do you want to proceed? Please, write YES or NO"
-read WELCANS
+read -n 3 WELCANS
 if [[ $WELCANS = YES ]] || [[ $WELCANS = yes ]] || [[ $WELCANS = Yes ]] ; then
 	get_os
 	get_boot_device
@@ -420,7 +423,9 @@ else
 		echo "There were errors building xar.
 	
 It's impossible to create a macOS installer without this tool, please, send a report."
+		printf -- '\n'
 		read -p "Press enter to continue"
+		printf -- '\n'
 	fi
 fi
 }
@@ -449,7 +454,9 @@ else
 		echo "There were errors building cmake.
 	
 It's impossible to install APFS driver without this tool, please, send a report."
+		printf -- '\n'
 		read -p "Press enter to continue"
+		printf -- '\n'
 	fi
 fi
 }
@@ -491,8 +498,8 @@ echo "Do you want to make a complete system dump?
 It will get detailed information about your Hardware.
 
 Please, write YES or NO"
-read SISANS
-if [[ $SISANS = YES ]] || [[ $SISANS = yes ]] ; then
+read -n 3 SISANS
+if [[ $SISANS = YES ]] || [[ $SISANS = yes ]] || [[ $SISANS = Yes ]] ; then
 	mkdir "$HOME/$DEST_PATH/Dumps"
 	dmesg > "$HOME/$DEST_PATH/Dumps/dmesg.txt"
     sudo lscpu > "$HOME/$DEST_PATH/Dumps/CPU_Information.txt"
@@ -534,7 +541,7 @@ echo "Do you want to dump your ACPI table (DSDT, SSDT, etc..)?
 You can use them to make improvements at your OS.
 
 Please write YES or NO"
-read ACPIANS
+read -n 3 ACPIANS
 if [[ $ACPIANS = YES ]] || [[ $ACPIANS = yes ]] || [[ $ACPIANS = Yes ]] ; then
 	if command -v iasl > /dev/null 2>&1 ; then 
 		DP2="iasl" 
@@ -572,7 +579,7 @@ echo "Do you want to install OpenSource APFS-Fuse driver?
 It can provide ReadOnly access to APFS formatted Volumes and DMGs.
 
 Please write YES or NO"
-read APFSANS
+read -n 3 APFSANS
 if [[ $APFSANS = YES ]] || [[ $APFSANS = yes ]] || [[ $APFSANS = Yes ]] ; then
 	GITCLONE
 	APFSMAKE
@@ -648,7 +655,7 @@ printf '\e[?5l'  # Turn on normal video
 echo "Do you want to mount an APFS volume?.
 
 Please write YES or NO"
-read APFSMOUNTANS
+read -n 3 APFSMOUNTANS
 if [[ $APFSMOUNTANS = YES ]] || [[ $APFSMOUNTANS = yes ]] || [[ $APFSMOUNTANS = Yes ]] ; then
 	eval sudo fdisk -l | awk "{print \$1}" | grep "/dev/[a-z][a-z][a-z][0-9]" | sed "s@:@@g" >> ${HOME}/${DEST_PATH}/Block_Device_List.txt
 	cd "$HOME/$DEST_PATH/"
@@ -680,8 +687,8 @@ Current boot device is $BOOTDEVICE."
 		[a-z][a-z][a-z][1-9])	eval cat ${HOME}/${DEST_PATH}/Block_Device_List.txt | grep "$APFSDISKMOUNT" > /dev/null
 							if [ $? != 1 ] ; then 
 								echo "   <--Valid input, continuing."
-								echo
-								echo
+								printf -- '\n'
+								printf -- '\n'
 								echo "Mounting $APFSDISKMOUNT as APFS volume..."
 								sleep 2
 								eval mkdir ${HOME}/${DEST_PATH}/APFS_Volume
@@ -691,7 +698,9 @@ Current boot device is $BOOTDEVICE."
 								echo
 								eval xdg-open ${HOME}/${DEST_PATH}/APFS_Volume/ </dev/null &>/dev/null &
 								echo
+								printf -- '\n'
 								read -p "Press enter to continue"
+								printf -- '\n'
 							else
 								echo "   <--Invalid input! Try again."
 								echo
@@ -702,6 +711,107 @@ Current boot device is $BOOTDEVICE."
 							;;
 	esac
 done
+fi
+eval ${EX1T}
+}
+
+mount_dmg_file()
+{
+eval ${GETOS}
+eval ${GETBOOT}
+eval ${RVENT}
+clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
+echo "Do you want to mount a DMG?.
+
+Please write YES or NO"
+read -n 3 DMGMOUNTANS
+if [[ $DMGMOUNTANS = YES ]] || [[ $DMGMOUNTANS = yes ]] || [[ $DMGMOUNTANS = Yes ]] ; then
+	DMGFILE="$(zenity --file-selection --file-filter='DMG files (dmg) | *.dmg' --title="Select a DMG file")"
+	DMGFILENAME="$( eval echo "$DMGFILE" | rev | awk -F\/ "{print \$1}" | rev | sed "s@\.dmg@@g" )"
+	echo
+	echo "Selected $DMGFILENAME.dmg"
+	echo
+	DMGTYPE="$(file $DMGFILE | awk -F: "{print \$2}")"
+	echo "Mounting DMG file of type $DMGTYPE"
+	cd "$HOME/$DEST_PATH/"
+	if [[ $(echo "$DMGTYPE" | grep APFS) -ne 0 ]] ; then
+		eval mkdir "'$HOME/$DEST_PATH/$DMGFILENAME'"
+		eval sudo apfs-fuse '$DMGFILE' '$HOME/$DEST_PATH/$DMGFILENAME'
+		if [ $? -eq 0 ] ; then
+			echo "DMG file successfuly mounted."
+			eval xdg-open "'$HOME/$DEST_PATH/$DMGFILENAME'" </dev/null &>/dev/null &
+		else
+			echo "An unknown error occured, please send a report"
+		fi
+	else
+		if [[ $(echo "$DMGTYPE" | grep compressed) -ne 0 ]] ; then
+			#eval sudo mount -t hfsplus -o loop '$DMGFILE' '$HOME/$DEST_PATH/$DMGFILENAME'
+			eval sudo udisksctl loop-setup -f '$HOME/$DEST_PATH/$DMGFILENAME.img' 
+			eval LOOP="$( losetup -l | grep $DMGFILENAME | awk "{print \$1}" )" 
+			if [ -z "$LOOP" ]
+			then
+				echo "\$LOOP is empty" 
+				exit 1
+			else
+				echo "Image OK continuing..." 
+				echo $LOOP 
+			fi
+			eval LOOPM="$( echo ${LOOP} | tac | grep -o "l.*" )"
+			if [ -z "$LOOPM" ]
+			then
+				echo "\$LOOPM is empty" 
+				exit 1
+			else
+				echo "Image block OK continuing..." 
+				echo $LOOPM 
+			fi
+			PARTLIST="$(lsblk -o KNAME | grep $LOOPM)"
+			for i in $PARTLIST ; do
+				eval udisksctl mount -b "/dev/$i" 2>/dev/null
+				if [ $? -eq 0 ] ; then
+					looppath="$(lsblk -o KNAME,MOUNTPOINT | grep $i | awk "{\$1=\"\"; print \$0}")"
+					eval xdg-open $looppath </dev/null &>/dev/null &
+					echo "DMG file successfuly mounted."
+				fi
+			done
+		else
+			eval dmg2img -v -i '$DMGFILE' -o '$HOME/$DEST_PATH/$DMGFILENAME.img'
+			sleep 1
+			#eval sudo mount -t hfsplus -o loop '$HOME/$DEST_PATH/$DMGFILENAME.img' '$HOME/$DEST_PATH/$DMGFILENAME'
+			eval sudo udisksctl loop-setup -f '$HOME/$DEST_PATH/$DMGFILENAME.img' 
+			eval LOOP="$( losetup -l | grep $DMGFILENAME | awk "{print \$1}" )" 
+			if [ -z "$LOOP" ]
+			then
+				echo "\$LOOP is empty" 
+				exit 1
+			else
+				echo "Image OK continuing..." 
+				echo $LOOP 
+			fi
+			eval LOOPM="$( echo ${LOOP} | tac | grep -o "l.*" )"
+			if [ -z "$LOOPM" ]
+			then
+				echo "\$LOOPM is empty" 
+				exit 1
+			else
+				echo "Image block OK continuing..." 
+				echo $LOOPM 
+			fi
+			PARTLIST="$(lsblk -o KNAME | grep $LOOPM)"
+			for i in $PARTLIST ; do
+				eval udisksctl mount -b "/dev/$i" 2>/dev/null
+				if [ $? -eq 0 ] ; then
+					looppath="$(lsblk -o KNAME,MOUNTPOINT | grep $i | awk "{\$1=\"\"; print \$0}")"
+					eval xdg-open $looppath </dev/null &>/dev/null &
+					echo "DMG file successfuly mounted."
+				fi
+			done
+		fi
+	fi
+	printf -- '\n'
 fi
 eval ${EX1T}
 }
@@ -722,7 +832,7 @@ one for Clover, formatted as FAT32 and another for macOS installer, formatted as
 Current boot device is $BOOTDEVICE, don't use this device for this function.
 
 Please write YES or NO"
-read USBSTICK
+read -n 3 USBSTICK
 if [ $USBSTICK == YES ] || [ $USBSTICK == yes ] || [ $USBSTICK == Yes ] ; then
 	LISTEXTDISKS
 else
@@ -745,7 +855,7 @@ printf '\e[?5l'  # Turn on normal video
 echo "Do you want to install Clover Boot Loader to a USB Stick?
 
 Please write YES or NO"
-read CLOVERANS
+read -n 3 CLOVERANS
 if [ $CLOVERANS == YES ] || [ $CLOVERANS == yes ] || [ $CLOVERANS == Yes ] ; then
 	cl_uefi_bios
 else
@@ -767,7 +877,9 @@ echo
 printf '\e[?5h'  # Turn on reverse video
 sleep 0.05
 printf '\e[?5l'  # Turn on normal video
+printf -- '\n'
 read -p "Press enter to continue"
+printf -- '\n'
 echo
 echo
 lsblk -o name,rm,hotplug,mountpoint | awk -F" " ""\$3\=\=""1"""" | tee ${HOME}/${DEST_PATH}/USB_Stick_List.txt
@@ -794,10 +906,12 @@ Current boot device is $BOOTDEVICE."
 		[a-z][a-z][a-z])	eval cat ${HOME}/${DEST_PATH}/USB_Stick_List.txt | grep "$LISTDISKANS" > /dev/null
 							if [ $? != 1 ] ; then 
 								echo "   <--Valid input, continuing."
-								echo
-								echo
-								echo "Are you sure? Please check carefully and press ENTER to continue or CTRL+C to abort!"
+								printf -- '\n' 
+								printf -- '\n'
+								printf "Are you sure? Please check carefully and press ENTER to continue or CTRL+C to abort! \n"
+								printf -- '\n'
 								read -p "Press enter to continue"
+								printf -- '\n'
 								echo
 								DISK="$LISTDISKANS"
 								UNMLIST="$(mount | grep "$DISK[1-9]" | awk "{print \$1}")"
@@ -831,8 +945,8 @@ printf '\e[?5l'  # Turn on normal video
 echo "Do you want to install Clover for UEFI or non-UEFI (Legacy BIOS) system?.
 
 Please write UEFI or BIOS"
-read CLANS
-if [[ $CLANS = UEFI ]] || [[ $CLANS = uefi ]] ; then
+read -n 4 CLANS
+if [[ $CLANS = UEFI ]] || [[ $CLANS = uefi ]] || [[ $CLANS = Uefi ]] ; then
 	EXTRACL
 	CLUEFI
 else
@@ -850,8 +964,9 @@ printf '\e[?5l'  # Turn on normal video
 echo "We'll now download and prepare all necessary files."
 echo
 echo
-echo
+printf -- '\n'
 read -p "Press enter to continue"
+printf -- '\n'
 eval mkdir ${HOME}/${DEST_PATH}/Clover/ 
 eval cd ${HOME}/${DEST_PATH}/Clover/ 
 wget https://sourceforge.net/projects/cloverefiboot/files/latest/download 
@@ -902,38 +1017,90 @@ echo "Only a basic set of EFI drivers were installed, you can find additional di
 ${HOME}/${DEST_PATH}/Clover/temp_folder/EFI/CLOVER/drivers64UEFI/
 
 Do you want to view a list of available EFI drivers? Please write YES or NO."
-read CLUEFIANS90
+read -n 3 CLUEFIANS90
 if [[ $CLUEFIANS90 = YES ]] || [[ $CLUEFIANS90 = yes ]] || [[ $CLUEFIANS90 = Yes ]] ; then
 	for i in ${DRVLIST} ; do
 		echo "$i"
 	done
 	echo
 	echo
-	echo
+	printf -- '\n'
 	read -p "Press enter to continue"
+	printf -- '\n'
 fi
-cloudconfig
+selectconfig
 } 
 
-cloudconfig()	#Open Clover Cloud Configurator
+selectconfig()	#Open Clover Cloud Configurator 
 {
 clear
-printf '\e[?5h'  # Turn on reverse video
+printf '\e[?5h'  # Turn on reverse video 
 sleep 0.05
 printf '\e[?5l'  # Turn on normal video
-echo "Do you want to create a new config.plist?
-This option will launch Clover Cloud Configurator web app.
+echo "Do you want to create a new config.plist or select an existent one?
 
-PS: After create your config.plist, save it at the folder ${HOME}/${DEST_PATH}/Clover/EFI/.
+This option will launch Cloud Clover Editor web app for the generation of a new
+configuration file or give you the ability to select a local one.
 
 Please write YES or NO."
-read CLCLOU
+read -n 3 CLCLOU
 if [[ $CLCLOU = YES ]] || [[ $CLCLOU = yes ]] || [[ $CLCLOU = Yes ]] ; then
-	xdg-open http://cloudclovereditor.altervista.org/cce/index.php 
-	echo
-	echo
-	echo
-	read -p "Press enter to continue"
+	clear
+	printf '\e[?5h'  # Turn on reverse video
+	sleep 0.05
+	printf '\e[?5l'  # Turn on normal video
+	while true ; do
+	echo "Do you want to select a config.plist or generate a new one
+using Cloud Clover Editor (CCE)?.
+
+Please write C for CCE or S to select one."
+		read -n 1 SELCONFIGANS
+		case $SELCONFIGANS in
+			C|c)xdg-open http://cloudclovereditor.altervista.org/cce/index.php </dev/null &>/dev/null &
+				printf -- '\n'
+				echo "PS: After create your config.plist, save it at the folder ${HOME}/${DEST_PATH}/Clover/EFI/."
+				printf -- '\n'
+				printf -- '\n'
+				read -p "Press enter to continue"
+				printf -- '\n'
+				break	
+				;;
+			S|s)PLISTFILE="$(zenity --file-selection --file-filter='PLIST files (plist) | *.plist' --title="Select a PLIST file")"
+				printf -- '\n'
+				printf -- '\n'
+				echo "Copying $PLISTFILE to ${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/"
+				printf -- '\n'
+				cp -R "$PLISTFILE" "${HOME}/${DEST_PATH}/Clover/EFI/CLOVER/"
+				if [ $? -eq 0 ] ; then
+					echo "PLIST file sucessfuly copied!"
+				else
+					echo "Something went wrong, please, try again."
+					continue
+				fi
+				break		
+				;;
+			[a-b]|[A-B]) echo "   <--Invalid input! Try again."
+				printf -- '\n'
+				printf -- '\n'
+				continue	
+				;;
+			[d-r]|[D-R]) echo "   <--Invalid input! Try again."
+				printf -- '\n'
+				printf -- '\n'
+				continue	
+				;;
+			[t-z]|[T-Z]) echo "   <--Invalid input! Try again."
+				printf -- '\n'
+				printf -- '\n'
+				continue	
+				;;	
+			[0-9]) echo "   <--Invalid input! Try again."
+				printf -- '\n'
+				printf -- '\n'
+				continue	
+				;;	
+		esac
+	done
 fi
 addkexts
 } 
@@ -948,7 +1115,7 @@ echo "Do you want to add a basic set of kexts?
 This option will add Lilu.kext, VirtualSMC.kext and LiluFriend.kext.
 
 Please write YES or NO."
-read KEXTANS
+read -n 3 KEXTANS
 if [[ $KEXTANS = YES ]] || [[ $KEXTANS = yes ]] || [[ $KEXTANS = Yes ]] ; then
 	eval cp -R ${DIR}/kexts/ ${HOME}/${DEST_PATH}/Clover/ 
 	eval cd ${HOME}/${DEST_PATH}/Clover/kexts/
@@ -1085,10 +1252,12 @@ Current boot device is $BOOTDEVICE."
 		[a-z][a-z][a-z][1-9])	eval cat ${HOME}/${DEST_PATH}/Clover/Available_Disks_List.txt | grep "$CLLISTDISKANS" > /dev/null
 							if [ $? != 1 ] ; then 
 								echo "   <--Valid input, continuing."
-								echo
-								echo
-								echo "Are you sure? Please check carefully and press ENTER to continue or CTRL+C to abort!"
+								printf -- '\n'
+								printf -- '\n'
+								printf "Are you sure? Please check carefully and press ENTER to continue or CTRL+C to abort! \n"
+								printf -- '\n'
 								read -p "Press enter to continue"
+								printf -- '\n'
 								echo
 								DISKX="$CLLISTDISKANS" 
 								echo
@@ -1107,7 +1276,7 @@ Current boot device is $BOOTDEVICE."
 done
 sleep 2
 eval udisksctl mount -b "/dev/${DISKX}" 
-sleep1
+sleep 1
 eval mount | grep "${DISKX}" | awk "{print \$3}" | sed "s/ /\\\ /g" > ${HOME}/${DEST_PATH}/Clover/target.txt
 TARGET="$(cat ${HOME}/${DEST_PATH}/Clover/target.txt)"
 if [ -z "$TARGET" ]
@@ -1135,7 +1304,7 @@ printf '\e[?5l'  # Turn on normal video
 echo "Do you want to unmount ${DISKX} ?
 
 Please write YES or NO."
-read EXITANS
+read -n 3 EXITANS
 if [[ $EXITANS = YES ]] || [[ $EXITANS = yes ]] || [[ $EXITANS = Yes ]] ; then
 	eval udisksctl unmount -b /dev/${DISKX} 
 	echo "Clover Boot Loader was successfully installed!"
@@ -1160,7 +1329,7 @@ This option will download needed files and create a macOS installer.
 This step may take some time to complete, so please, be patient...
 
 Please write YES or NO."
-read MACOSANS
+read -n 3 MACOSANS
 if [[ $MACOSANS = YES ]] || [[ $MACOSANS = yes ]] || [[ $MACOSANS = Yes ]] ; then 
 	if [[ $(echo "$FSPACE > $TSPACE" | bc) -eq 1 ]] ; then
 		echo
@@ -1234,8 +1403,9 @@ Choose the target partition at your USB Stick, for the macOS installer
 The partition must have at least 7Gb free"
 echo
 echo
-echo
+printf -- '\n'
 read -p "Press enter to continue"
+printf -- '\n'
 echo
 echo
 eval mkdir ${HOME}/${DEST_PATH}/macOS
@@ -1265,10 +1435,12 @@ Current boot device is $BOOTDEVICE."
 		[a-z][a-z][a-z][1-9])	eval cat ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt | grep "$CPBASEANS22" > /dev/null
 							if [ $? != 1 ] ; then
 								echo "   <--Valid input, continuing."
-								echo
-								echo
-								echo "Are you sure? Please check carefully and press ENTER to continue or CTRL+C to abort!"
+								printf -- '\n'
+								printf -- '\n'
+								printf "Are you sure? Please check carefully and press ENTER to continue or CTRL+C to abort! \n"
+								printf -- '\n'
 								read -p "Press enter to continue"
+								printf -- '\n'
 								echo
 								DISK="${CPBASEANS22}"  
 								UNMLIST="$(mount | grep "$DISK" | awk "{print \$1}")"
@@ -1359,6 +1531,7 @@ system_dump
 acpidump 
 applefs
 mount_apfs_volume
+mount_dmg_file
 dousbstick
 clover_ask
 domacosinstall
@@ -1371,3 +1544,4 @@ $OPTC
 $OPTD
 $OPTE
 $OPTI
+$OPTG
