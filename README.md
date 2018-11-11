@@ -13,21 +13,30 @@ This are the current features:
 - Install hfsprogs to access HFS and HFS+ formatted partitions.
 - Compile and Install APFS-Fuse to access APFS formatted partitions.
 - Mount APFS formatted partitions.
+- Mount DMGs.
 - Extract and decompile ACPI Tables.
 - Make complete system dump including Full Audio Codec dump and EDID.
 
 
-Currently it has full capabities Manjaro and Ubuntu but, the script
-was made with the intention of make it compatible to others distros.
+~~Currently it has full capabities Manjaro and Ubuntu but, the script
+was made with the intention of make it compatible to others distros.~~
 
+Now it's working in some of the most used distros...
 
 > You can download Manjaro Linux from [here](https://manjaro.org/get-manjaro/)
 
 > You can download Ubuntu Linux from [here](https://www.ubuntu.com/download/desktop)
 
-Keep inf mind that, by running the script from a LiveOS, you may need to perform a full
+> You can download Linux Mint from [here](https://linuxmint.com/download.php)
+
+~~Keep inf mind that, by running the script from a LiveOS, you may need to perform a full
 system upgrade. The script will automatically do this for Manjaro but, for Ubuntu, external
-configuration is needed in order ro allow access to all repositories.
+configuration is needed in order ro allow access to all repositories.~~
+
+A full system upgrade isn't needed at all...
+
+Mint and Manjaro has full repository access from the Live OS, Ubuntu needs some
+interaction, you can find a better description [here](https://www.osx86.net/forums/topic/25653-osx86dotnet-linux4macos/).
 
 
 The usage is simple, clone or download it, go to its directory and run;
@@ -44,6 +53,7 @@ The available options are:
 -a              = Compile and install APFS-Fuse drivers
 -c 		= Install Clover Bootloader to a disk
 -d 		= Used as direct jump, needs extra argument.
+-g 		= Mount a DMG
 -h 		= This help
 -i 		= Create a macOS installer
 -l 		= Run all tasks
