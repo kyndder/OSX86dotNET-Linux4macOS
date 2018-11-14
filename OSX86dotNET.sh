@@ -31,6 +31,7 @@ BOOTDEVICE=""
 FSPACE=""
 OSTYPE=""
 UNMLIST=""
+TDISKX=""
 
 while getopts "h?cavd:ilg" opt; do
     case "$opt" in
@@ -88,6 +89,8 @@ echo -e '\033]2;'$DEST_PATH'\007'
 
 ${VERBOSE}
 
+export PATH="$PATH:/usr/local/lib/:/usr/local/bin/"
+
 eval mkdir -p "$HOME/$DEST_PATH"
 
 LOG_FILE="$HOME/$DEST_PATH/logfile.log"
@@ -130,44 +133,45 @@ DP[3]="pv"
 DP[4]="tree"
 DP[5]="inxi"
 DP[6]="git"
+DP[7]="dialog"
 #Arch
-DP[7]="base-devel"
-DP[8]="devtools"
-DP[9]="cmake"
-DP[10]="fuse-common"
-DP[11]="icu"
-DP[12]="zlib"
-DP[13]="lib32-zlib"
-DP[14]="ncurses"
-DP[15]="acpica"
-DP[16]="bzip2"
-DP[17]="yay"
+DP[8]="base-devel"
+DP[9]="devtools"
+DP[10]="cmake"
+DP[11]="fuse-common"
+DP[12]="icu"
+DP[13]="zlib"
+DP[14]="lib32-zlib"
+DP[15]="ncurses"
+DP[16]="acpica"
+DP[17]="bzip2"
+DP[18]="yay"
 #Clover
-DP[18]="7z"
-DP[19]="curl"
-DP[20]="gzip"
-DP[21]="libxml2"
-DP[22]="xarchiver"
-DP[23]="xar"
-DP[24]="hfsprogs"
-DP[25]="cpio"
-DP[26]="progress"
-DP[27]="dmg2img"
-DP[28]="hfsutils"
+DP[19]="7z"
+DP[20]="curl"
+DP[21]="gzip"
+DP[22]="libxml2"
+DP[23]="xarchiver"
+DP[24]="xar"
+DP[25]="hfsprogs"
+DP[26]="cpio"
+DP[27]="progress"
+DP[28]="dmg2img"
+DP[29]="hfsutils"
 #Debian
-DP[29]="fuse-emulator-common"
-DP[30]="icu-devtools"
-DP[31]="zlib1g-dev"
-DP[32]="zlib1g"
-DP[33]="ncurses-base"
-DP[34]="ncurses-dev"
-DP[35]="acpica-tools"
-DP[36]="build-essential"
-DP[37]="libxml2-dev"
-DP[38]="libssl1.0-dev"
-DP[39]="libbz2-dev"
-DP[40]="libfuse-dev"
-DP[41]="p7zip-full"
+DP[30]="fuse-emulator-common"
+DP[31]="icu-devtools"
+DP[32]="zlib1g-dev"
+DP[33]="zlib1g"
+DP[34]="ncurses-base"
+DP[35]="ncurses-dev"
+DP[36]="acpica-tools"
+DP[37]="build-essential"
+DP[38]="libxml2-dev"
+DP[39]="libssl1.0-dev"
+DP[40]="libbz2-dev"
+DP[41]="libfuse-dev"
+DP[42]="p7zip-full"
 
 IFS=$'\n'
 
@@ -176,7 +180,8 @@ do_spin()
 PID=$!
 i=1
 sp="/-\|"
-echo -n "Copying, please wait... " ""
+echo -n "Working, please wait... " ""
+printf -- '\n'
 while [ -d /proc/$PID ]
 do
   printf "\b${sp:i++%${#sp}:1}"
@@ -206,7 +211,7 @@ case $BOOTDEVICE in
 		BOOTDEVICE="$( mount | grep "boot" | awk "{print \$1}" )" 
 		;;  
 esac
-echo
+printf -- '\n'
 echo "Current boot device is $BOOTDEVICE ."
 }
 
@@ -223,8 +228,8 @@ esac
 clear
 eval find "/home/${USER}/OSX86dotNET/*" | grep -v "logfile.log"
 if [ $? -eq 0 ] ; then
-	echo
-	echo
+	printf -- '\n'
+	printf -- '\n'
 	printf '\e[?5h'  # Turn on reverse video
 	sleep 0.05
 	printf '\e[?5l'  # Turn on normal video
@@ -278,7 +283,7 @@ eval ${EX1T}
 
 deps()	#Check dependencies
 {
-for i in `seq 0 6`
+for i in `seq 0 7`
 do
 	if command -v ${DP[i]} > /dev/null 2>&1 ; then 
 		echo "${DP[i]} found!"  
@@ -300,7 +305,7 @@ CHKDEPS()	#Check dependencies by OS
 echo "${OSTYPE}" | while IFS= read -r line ; do
 case $line in
 	Arch )	 echo "$OSTYPE"		 
-	for i in `seq 7 17`
+	for i in `seq 8 18`
 	do
 		if pacman -Qk ${DP[i]} > /dev/null 2>&1 || pacman -Qs ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -318,7 +323,7 @@ case $line in
 	break	
 	;;
 	Manjaro	)	 echo "$OSTYPE"		 
-	for i in `seq 7 17`
+	for i in `seq 8 18`
 	do
 		if pacman -Qk ${DP[i]} > /dev/null 2>&1 || pacman -Qs ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -336,7 +341,7 @@ case $line in
 	break	
 	;;
 	Debian ) 	echo "$OSTYPE"
-	for i in `seq 29 41`
+	for i in `seq 30 42`
 	do
 		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -356,7 +361,7 @@ case $line in
 	break
 	;;
 	Ubuntu ) 	echo "$OSTYPE"
-	for i in `seq 29 41`
+	for i in `seq 30 42`
 	do
 		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -376,7 +381,7 @@ case $line in
 	break
 	;;
 	Mint ) 	echo "$OSTYPE"
-	for i in `seq 29 41`
+	for i in `seq 30 42`
 	do
 		if dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ; then
 			echo "${DP[i]} found!"  
@@ -404,11 +409,11 @@ build_xar()		#Building xar for Deb
 if ( command -v xar > /dev/null 2>&1 ) ; then  
 	echo "xar found!"
 else
-	echo 
-	echo
+	printf -- '\n' 
+	printf -- '\n'
 	echo "Building xar archiver for .pkg extraction"
-	echo
-	echo
+	printf -- '\n'
+	printf -- '\n'
 	eval mkdir ${HOME}/${DEST_PATH}/xar
 	eval cd ${HOME}/${DEST_PATH}/xar/
 	wget https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/xar/xar-1.5.2.tar.gz
@@ -435,11 +440,11 @@ build_cmake()		#Building Cmake for Deb
 if ( command -v cmake > /dev/null 2>&1 ) ; then  
 	echo "cmake found!"
 else
-	echo 
-	echo
+	printf -- '\n' 
+	printf -- '\n'
 	echo "Building cmake builder."
-	echo
-	echo
+	printf -- '\n'
+	printf -- '\n'
 	eval mkdir ${HOME}/${DEST_PATH}/cmake
 	eval cd ${HOME}/${DEST_PATH}/cmake/
 	wget https://cmake.org/files/v3.13/cmake-3.13.0-rc2.tar.gz
@@ -463,7 +468,7 @@ fi
 
 CLVDEPS()	#Check Clover dependencies
 {
-for i in `seq 18 28`
+for i in `seq 19 29`
 do 
 	if ( command -v ${DP[i]} > /dev/null 2>&1 ) || ( pacman -Qi ${DP[i]} > /dev/null 2>&1 ) || ( dpkg -l | grep -i ${DP[i]} > /dev/null 2>&1 ) ; then  
 		echo "${DP[i]} found!"    
@@ -594,9 +599,9 @@ For usage and useful informations, please, read the ${HOME}/${DEST_PATH}/apfs-fu
     fi
 else
     echo "APFS-Fuse will not be installed."
-    echo
-	echo
-	echo
+    printf -- '\n'
+	printf -- '\n'
+	printf -- '\n'
 fi
 eval ${EX1T}
 } 
@@ -663,8 +668,8 @@ if [[ $APFSMOUNTANS = YES ]] || [[ $APFSMOUNTANS = yes ]] || [[ $APFSMOUNTANS = 
 	for i in $(cat Block_Device_List.txt) ; do
     	sudo file -Ls $i | grep APFS 
     done
-    echo
-    echo
+    printf -- '\n'
+    printf -- '\n'
     while true; do
 	printf '\e[?5h'  # Turn on reverse video
 	sleep 0.05
@@ -675,13 +680,13 @@ Current boot device is $BOOTDEVICE."
 	read -n 4 APFSDISKMOUNT
 	case $APFSDISKMOUNT in
 		" "" "" "" ") echo "   <--Invalid input! Try again."
-			 echo
-			 echo
+			 printf -- '\n'
+			 printf -- '\n'
 			 continue	;;
 
 		[1-9][1-9][1-9][1-9])	echo "   <--Invalid input! Try again."
-			 echo
-			 echo
+			 printf -- '\n'
+			 printf -- '\n'
 			 continue		;;
 
 		[a-z][a-z][a-z][1-9])	eval cat ${HOME}/${DEST_PATH}/Block_Device_List.txt | grep "$APFSDISKMOUNT" > /dev/null
@@ -695,16 +700,16 @@ Current boot device is $BOOTDEVICE."
 								eval sudo apfs-fuse "/dev/$APFSDISKMOUNT" "${HOME}/${DEST_PATH}/APFS_Volume/"
 								sleep 2
 								echo "APFS volume mounted..."
-								echo
+								printf -- '\n'
 								eval xdg-open ${HOME}/${DEST_PATH}/APFS_Volume/ </dev/null &>/dev/null &
-								echo
+								printf -- '\n'
 								printf -- '\n'
 								read -p "Press enter to continue"
 								printf -- '\n'
 							else
 								echo "   <--Invalid input! Try again."
-								echo
-								echo
+								printf -- '\n'
+								printf -- '\n'
 								continue	
 							fi
 							break
@@ -731,9 +736,9 @@ read -n 3 DMGMOUNTANS
 if [[ $DMGMOUNTANS = YES ]] || [[ $DMGMOUNTANS = yes ]] || [[ $DMGMOUNTANS = Yes ]] ; then
 	DMGFILE="$(zenity --file-selection --file-filter='DMG files (dmg) | *.dmg' --title="Select a DMG file")"
 	DMGFILENAME="$( eval echo "$DMGFILE" | rev | awk -F\/ "{print \$1}" | rev | sed "s@\.dmg@@g" )"
-	echo
+	printf -- '\n'
 	echo "Selected $DMGFILENAME.dmg"
-	echo
+	printf -- '\n'
 	DMGTYPE="$(file $DMGFILE | awk -F: "{print \$2}")"
 	echo "Mounting DMG file of type $DMGTYPE"
 	cd "$HOME/$DEST_PATH/"
@@ -837,8 +842,8 @@ if [ $USBSTICK == YES ] || [ $USBSTICK == yes ] || [ $USBSTICK == Yes ] ; then
 	LISTEXTDISKS
 else
     echo "The bootable USB Stick will not be created."
-    echo
-	echo
+    printf -- '\n'
+	printf -- '\n'
 fi
 eval ${EX1T}
 } 
@@ -860,8 +865,8 @@ if [ $CLOVERANS == YES ] || [ $CLOVERANS == yes ] || [ $CLOVERANS == Yes ] ; the
 	cl_uefi_bios
 else
     echo "Clover Bootloader will not be installed."
-    echo
-	echo
+    printf -- '\n'
+	printf -- '\n'
 fi
 eval ${EX1T}
 } 
@@ -871,20 +876,20 @@ LISTEXTDISKS()	#Listing available disks
 clear
 echo "Before we proceed, please, make sure that only the target USB Stick is plugged in.
 Remove any other removable media before continue, the disk will be completely ERASED."
-echo
-echo
-echo
+printf -- '\n'
+printf -- '\n'
+printf -- '\n'
 printf '\e[?5h'  # Turn on reverse video
 sleep 0.05
 printf '\e[?5l'  # Turn on normal video
 printf -- '\n'
 read -p "Press enter to continue"
 printf -- '\n'
-echo
-echo
+printf -- '\n'
+printf -- '\n'
 lsblk -o name,rm,hotplug,mountpoint | awk -F" " ""\$3\=\=""1"""" | tee ${HOME}/${DEST_PATH}/USB_Stick_List.txt
-echo
-echo
+printf -- '\n'
+printf -- '\n'
 while true; do
 	printf '\e[?5h'  # Turn on reverse video
 	sleep 0.05
@@ -894,13 +899,13 @@ Current boot device is $BOOTDEVICE."
 	read -n 3 LISTDISKANS
 	case $LISTDISKANS in
 		" "" "" ") echo "   <--Invalid input! Try again."
-			 echo
-			 echo
+			 printf -- '\n'
+			 printf -- '\n'
 			 continue	;;
 
 		[1-9][1-9][1-9])	echo "   <--Invalid input! Try again."
-			 echo
-			 echo
+			 printf -- '\n'
+			 printf -- '\n'
 			 continue		;;
 
 		[a-z][a-z][a-z])	eval cat ${HOME}/${DEST_PATH}/USB_Stick_List.txt | grep "$LISTDISKANS" > /dev/null
@@ -912,7 +917,7 @@ Current boot device is $BOOTDEVICE."
 								printf -- '\n'
 								read -p "Press enter to continue"
 								printf -- '\n'
-								echo
+								printf -- '\n'
 								DISK="$LISTDISKANS"
 								UNMLIST="$(mount | grep "$DISK[1-9]" | awk "{print \$1}")"
 								for i in $UNMLIST
@@ -920,14 +925,14 @@ Current boot device is $BOOTDEVICE."
 									eval udisksctl unmount -b "${i}" </dev/null &>/dev/null &
 								done
 								sleep 2
-								echo
+								printf -- '\n'
 								echo "Target disk is /dev/$DISK" 
-								echo
+								printf -- '\n'
 								dofilesystem
 							else
 								echo "   <--Invalid input! Try again."
-								echo
-								echo
+								printf -- '\n'
+								printf -- '\n'
 								continue	
 							fi
 							break
@@ -962,8 +967,8 @@ printf '\e[?5h'  # Turn on reverse video
 sleep 0.05
 printf '\e[?5l'  # Turn on normal video
 echo "We'll now download and prepare all necessary files."
-echo
-echo
+printf -- '\n'
+printf -- '\n'
 printf -- '\n'
 read -p "Press enter to continue"
 printf -- '\n'
@@ -1022,8 +1027,8 @@ if [[ $CLUEFIANS90 = YES ]] || [[ $CLUEFIANS90 = yes ]] || [[ $CLUEFIANS90 = Yes
 	for i in ${DRVLIST} ; do
 		echo "$i"
 	done
-	echo
-	echo
+	printf -- '\n'
+	printf -- '\n'
 	printf -- '\n'
 	read -p "Press enter to continue"
 	printf -- '\n'
@@ -1188,9 +1193,9 @@ sudo dd if=/dev/zero of=OS\ X\ Base\ System.img count=2500 bs=1M status=progress
 
 dofilesystem() #Formatting USB Stick for CLover and Installer
 {
-echo
+printf -- '\n'
 echo "Creating filesystem, please, be patient, this may take a while."
-echo
+printf -- '\n'
 eval sudo dd if=/dev/zero of=/dev/${DISK} bs=512 count=1 conv=notrunc status=progress 
 sleep 5
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << FDISK_CMDS  | eval sudo fdisk /dev/${DISK}
@@ -1227,8 +1232,8 @@ clvfinish() #Writting Clover to EFI partition
 {
 clear
 lsblk -o name,rm,hotplug,mountpoint | tee ${HOME}/${DEST_PATH}/Clover/Available_Disks_List.txt
-echo
-echo
+printf -- '\n'
+printf -- '\n'
 while true; do
 	printf '\e[?5h'  # Turn on reverse video
 	sleep 0.05
@@ -1240,13 +1245,13 @@ Current boot device is $BOOTDEVICE."
 	read -n 4 CLLISTDISKANS
 	case $CLLISTDISKANS in
 		" "" "" "" ") echo "   <--Invalid input! Try again."
-			 echo
-			 echo
+			 printf -- '\n'
+			 printf -- '\n'
 			 continue	;;
 
 		[1-9][1-9][1-9][1-9])	echo "   <--Invalid input! Try again."
-			 echo
-			 echo
+			 printf -- '\n'
+			 printf -- '\n'
 			 continue		;;
 
 		[a-z][a-z][a-z][1-9])	eval cat ${HOME}/${DEST_PATH}/Clover/Available_Disks_List.txt | grep "$CLLISTDISKANS" > /dev/null
@@ -1258,16 +1263,16 @@ Current boot device is $BOOTDEVICE."
 								printf -- '\n'
 								read -p "Press enter to continue"
 								printf -- '\n'
-								echo
+								printf -- '\n'
 								DISKX="$CLLISTDISKANS" 
-								echo
+								printf -- '\n'
 								echo "Target disk is /dev/$DISKX" 
 								echo "Formating..."
 								sudo mkfs.fat -F 32 /dev/${DISKX} -n EFI 
 							else
 								echo "   <--Invalid input! Try again."
-								echo
-								echo
+								printf -- '\n'
+								printf -- '\n'
 								continue	
 							fi
 							break
@@ -1289,8 +1294,8 @@ else
 fi
 sleep 1
 eval sudo cp -R ${HOME}/${DEST_PATH}/Clover/EFI/ "${TARGET}"/ 
-echo 
-echo
+printf -- '\n' 
+printf -- '\n'
 echo "Finished copying files." 
 UNMPART
 } 
@@ -1332,8 +1337,8 @@ Please write YES or NO."
 read -n 3 MACOSANS
 if [[ $MACOSANS = YES ]] || [[ $MACOSANS = yes ]] || [[ $MACOSANS = Yes ]] ; then 
 	if [[ $(echo "$FSPACE > $TSPACE" | bc) -eq 1 ]] ; then
-		echo
-		echo
+		printf -- '\n'
+		printf -- '\n'
 		echo "Needed space ${TSPACE}Gb , available space ${FSPACE}Gb , OK continuing..."
 		sleep 2
 		copybasesystem
@@ -1376,14 +1381,14 @@ eval sudo wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa8
 eval sudo wget http://swcdn.apple.com/content/downloads/29/03/091-94326/45lbgwa82gbgt7zbgeqlaurw2t9zxl8ku7/AppleDiagnostics.chunklist 
 sleep 1
 eval sudo mv "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESDDmg.pkg" "${TARGET}/Install\ macOS\ Mojave.app/Contents/SharedSupport/InstallESD.dmg"
-echo
-echo
+printf -- '\n'
+printf -- '\n'
 echo "Aditional downloads finished!"
-echo
-echo
+printf -- '\n'
+printf -- '\n'
 changeinstallinfo
-echo
-echo
+printf -- '\n'
+printf -- '\n'
 echo "Installer successful created!
 		
 Unplug and replug your USB Stick in order to view the files.
@@ -1401,17 +1406,17 @@ echo "Before we proceed, we must know where to place the files.
 Choose the target partition at your USB Stick, for the macOS installer
 
 The partition must have at least 7Gb free"
-echo
-echo
+printf -- '\n'
+printf -- '\n'
 printf -- '\n'
 read -p "Press enter to continue"
 printf -- '\n'
-echo
-echo
+printf -- '\n'
+printf -- '\n'
 eval mkdir ${HOME}/${DEST_PATH}/macOS
 eval lsblk -o name,rm,hotplug,mountpoint | tee ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt 
 eval cat ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt
-echo
+printf -- '\n'
 while true; do
 	printf '\e[?5h'  # Turn on reverse video
 	sleep 0.05
@@ -1423,13 +1428,13 @@ Current boot device is $BOOTDEVICE."
 	read -n 4 CPBASEANS22
 	case $CPBASEANS22 in
 		" "" "" "" ") echo "   <--Invalid input! Try again."
-			 echo
-			 echo
+			 printf -- '\n'
+			 printf -- '\n'
 			 continue	;;
 
 		[1-9][1-9][1-9][1-9])	echo "   <--Invalid input! Try again."
-			 echo
-			 echo
+			 printf -- '\n'
+			 printf -- '\n'
 			 continue		;;
 
 		[a-z][a-z][a-z][1-9])	eval cat ${HOME}/${DEST_PATH}/macOS/Available_Disks_List.txt | grep "$CPBASEANS22" > /dev/null
@@ -1441,7 +1446,7 @@ Current boot device is $BOOTDEVICE."
 								printf -- '\n'
 								read -p "Press enter to continue"
 								printf -- '\n'
-								echo
+								printf -- '\n'
 								DISK="${CPBASEANS22}"  
 								UNMLIST="$(mount | grep "$DISK" | awk "{print \$1}")"
 								for i in $UNMLIST
@@ -1513,15 +1518,216 @@ Current boot device is $BOOTDEVICE."
 								dobasesystem
 							else
 								echo "   <--Invalid input! Try again."
-								echo
-								echo
+								printf -- '\n'
+								printf -- '\n'
 								continue
 							fi
 							break
 							;;
 	esac
 done
-} 
+}
+
+disk_clone()
+{
+eval ${GETOS}
+eval ${GETBOOT}
+eval ${RVENT}
+clear
+printf '\e[?5h'  # Turn on reverse video
+sleep 0.05
+printf '\e[?5l'  # Turn on normal video
+echo "Do you want to clone a partition?
+
+Be careful using this option, you can lost important data by selecting a
+wrong source or target partition.
+
+Do you want to proceed?
+
+Please, write YES or NO"
+read -n 3 DISKCLONEANS
+if [[ $DISKCLONEANS = YES ]] || [[ $DISKCLONEANS = yes ]] || [[ $DISKCLONEANS = Yes ]] ; then
+	while true ; do
+		clear
+		lsblk -p -o KNAME,FSTYPE,LABEL,SIZE,TYPE,MOUNTPOINT
+		printf '\e[?5h'  # Turn on reverse video
+		sleep 0.05
+		printf '\e[?5l'  # Turn on normal video
+		printf -- '\n'
+		printf -- '\n'
+		echo "Please, type in the "source" partition, for example, 'sdh3'"
+		read -n 4 SOURCEDISKANS
+		case $SOURCEDISKANS in
+		" "" "" "" ") echo "   <--Invalid input! Try again."
+			 printf -- '\n'
+			 printf -- '\n'
+			 continue	;;
+
+		[1-9][1-9][1-9][1-9])	echo "   <--Invalid input! Try again."
+			 printf -- '\n'
+			 printf -- '\n'
+			 continue		;;
+
+		[a-z][a-z][a-z][1-9])	eval lsblk -p -o KNAME,FSTYPE,LABEL,SIZE,TYPE,MOUNTPOINT | grep "$SOURCEDISKANS" > /dev/null
+			 if [ $? != 1 ] ; then 
+				echo "   <--Valid input, continuing."
+				printf -- '\n'
+				printf -- '\n'
+				printf "Are you sure? Please check carefully and press ENTER to continue or CTRL+C to abort! \n"
+				printf -- '\n'
+				read -p "Press enter to continue"
+				printf -- '\n'
+				printf -- '\n'
+				DISKX="$SOURCEDISKANS" 
+				printf -- '\n'
+				echo "Source partition is /dev/$DISKX" 
+			 else
+				echo "   <--Invalid input! Try again."
+				printf -- '\n'
+				printf -- '\n'
+				continue	
+			 fi
+			break
+			;;
+		esac
+	done
+	while true ; do
+		clear
+		eval lsblk -p -o KNAME,FSTYPE,LABEL,SIZE,TYPE,MOUNTPOINT | grep -v $DISKX
+		printf '\e[?5h'  # Turn on reverse video
+		sleep 0.05
+		printf '\e[?5l'  # Turn on normal video
+		printf -- '\n'
+		printf -- '\n'
+		echo "Please, type in the "target" partition, for example, 'sdi3'"
+		read -n 4 TARGETDISKANS
+		case $TARGETDISKANS in
+		" "" "" "" ") echo "   <--Invalid input! Try again."
+			 printf -- '\n'
+			 printf -- '\n'
+			 continue	;;
+
+		[1-9][1-9][1-9][1-9])	echo "   <--Invalid input! Try again."
+			 printf -- '\n'
+			 printf -- '\n'
+			 continue		;;
+
+		[a-z][a-z][a-z][1-9])	eval lsblk -p -o KNAME,FSTYPE,LABEL,SIZE,TYPE,MOUNTPOINT | grep "$TARGETDISKANS" > /dev/null
+			 if [ $? != 1 ] ; then 
+				echo "   <--Valid input, continuing."
+				printf -- '\n'
+				printf -- '\n'
+				printf "Are you sure? Please check carefully and press ENTER to continue or CTRL+C to abort! \n"
+				printf -- '\n'
+				read -p "Press enter to continue"
+				printf -- '\n'
+				printf -- '\n'
+				TDISKX="$TARGETDISKANS" 
+				printf -- '\n'
+				echo "Target partition is /dev/$TDISKX" 
+			 else
+				echo "   <--Invalid input! Try again."
+				printf -- '\n'
+				printf -- '\n'
+				continue	
+			 fi
+			break
+			;;
+		esac
+	done
+	if [[ $DISKX != $TDISKX ]] ; then
+		printf "Partitions are not equal, continuing... \n"
+		printf -- '\n'
+	else
+		printf "Partitions can't be the same, exiting."
+		printf -- '\n'
+		exit 1
+	fi
+	printf -- '\n'
+	if [[ ${DISKX%${DISKX#???}} != ${TDISKX%${TDISKX#???}} ]] ; then
+		printf "Partitions are not from the same disk, continuing... \n"
+		printf -- '\n'
+	else
+		printf "You are attempting to clone partitions from the same disk. \n"
+		printf "Cloning partitions on the same disk may lead to I/O erros and possibly, to an unsuccessful clone... \n"
+		printf -- '\n'
+		printf -- '\n'
+		printf -- '\n'
+		printf "Do you want to proceed? Please, press ENTER to continue or CTRL+C to abort! \n"
+		printf -- '\n'
+		read -p "Press enter to continue"
+		printf -- '\n'
+	fi
+	FSDISKX="$(lsblk -p -o KNAME,FSTYPE,SIZE | grep $DISKX | awk "{print \$2}")"
+	SIZDISKX="$(lsblk -p -b -o KNAME,FSTYPE,SIZE | grep $DISKX | awk "{print \$3}" | sed "s/[a-z|A-Z]//g")"
+	FSTDISKX="$(lsblk -p -o KNAME,FSTYPE,SIZE | grep $TDISKX | awk "{print \$2}")"
+	SIZTDISKX="$(lsblk -p -b -o KNAME,FSTYPE,SIZE | grep $TDISKX | awk "{print \$3}" | sed "s/[a-z|A-Z]//g")"
+	if [[ $(echo "$SIZDISKX <= $SIZTDISKX" | bc) -eq 0 ]] ; then
+		printf "The source partition is greater than the target partition, exiting. \n"
+		printf -- '\n'
+		exit 1
+	else
+		printf "The source partition fits to the target partition, continuing... \n"
+		printf -- '\n'
+		sleep 5
+	fi
+	clear
+	printf '\e[?5h'  # Turn on reverse video
+	sleep 0.05
+	printf '\e[?5l'  # Turn on normal video
+	printf "Source disk is /dev/$DISKX and target disk is /dev/$TDISKX"
+	printf -- '\n'
+	printf -- '\n'
+	printf -- '\n'
+	printf "You are about to Clone /dev/$DISKX, $FSDISKX filesystem with $(echo "scale=2; $(sudo fdisk -s /dev/$DISKX) / 1024^2" | bc)Gb size to the /dev/$TDISKX device, \n"
+	printf "$FSTDISKX filesystem with $(echo "scale=2; $(sudo fdisk -s /dev/$TDISKX) / 1024^2" | bc)Gb size. \n"
+	printf -- '\n'
+	printf "Keep in mind that the target partition will be resized to the same size of the source partition. \n"
+	printf "You can fix this later using any partition manager and by expanding the partition's size using the free space... \n"
+	printf -- '\n'
+	printf -- '\n'
+	printf "Are you sure? Please check carefully and press ENTER to continue or CTRL+C to abort! \n"
+	printf -- '\n'
+	read -p "Press enter to continue"
+	printf -- '\n'
+	printf -- '\n'
+	printf "Unmounting partitions... \n"
+	eval udisksctl unmount -b /dev/$DISKX > /dev/null 2>&1
+	eval udisksctl unmount -b /dev/$TDISKX > /dev/null 2>&1
+	sleep 2
+	eval "(sudo pv -n /dev/$DISKX | sudo dd of=/dev/$TDISKX bs=128M conv=notrunc,noerror)" 2>&1 | dialog --gauge "Cloning /dev/$DISKX to /dev/$TDISKX, please wait..." 10 70 0
+	if [ $? -eq 0 ] ; then
+		clear
+		printf "/dev/$DISKX successful cloned! \n" 
+		printf -- '\n' 
+	else
+		printf "An unknown error occured, please send a report \n"
+		exit 1
+	fi
+	sleep 5
+	sudo cmp -b /dev/$DISKX /dev/$TDISKX | do_spin
+	printf -- '\n'
+	printf "Trying to mount partitions... \n"
+	eval udisksctl mount -b /dev/$DISKX
+	if [ $? -eq 0 ] ; then
+		printf "/dev/$DISKX mounted. \n"  
+		printf -- '\n'
+	else
+		printf "Could not mount /dev/$DISKX ... \n"
+		printf -- '\n'
+	fi
+	eval udisksctl mount -b /dev/$TDISKX
+	if [ $? -eq 0 ] ; then
+		printf "/dev/$TDISKX mounted. \n" 
+		printf -- '\n'
+	else
+		printf "Could not mount /dev/$DISKX ... \n"
+		printf -- '\n'
+	fi
+	printf "All finished! \n"
+fi
+eval ${EX1T}
+}
 
 runall()	#Run all tasks -l
 {
@@ -1535,7 +1741,8 @@ mount_dmg_file
 dousbstick
 clover_ask
 domacosinstall
-echo
+disk_clone
+printf -- '\n'
 eval xdg-open ${HOME}/${DEST_PATH}/ </dev/null &>/dev/null &
 }
 

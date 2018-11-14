@@ -9,6 +9,7 @@ This are the current features:
 
 - Create a macOS installer.
 - Install Clover Bootloader to disk for UEFI and Legacy boot.
+- Clone partitions.
 - Download and install Basic set of kexts (work in progress).
 - Install hfsprogs to access HFS and HFS+ formatted partitions.
 - Compile and Install APFS-Fuse to access APFS formatted partitions.
@@ -75,6 +76,7 @@ applefs             =Compile and install APFS-Fuse drivers "same as -a"
 clover_ask          =Install Clover to disk "same as -c"
 dev_tool            =Check and install development tools"
 mount_apfs_volume   =Mount an APFS Volume
+disk_clone			=Clone a partition
 ```
 
 #### This is a work in progress, so, suggestions are welcome.
